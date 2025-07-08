@@ -76,7 +76,7 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
   const processImageWithOCR = async (file: File) => {
     setOcrProcessing(true);
     try {
-      toast({ title: "Extracting text with OCR…", description: "Contacting OCR.space API…" });
+      // Hide intermediate toasts: toast({ title: "Extracting text with OCR…", description: "Contacting OCR.space API…" });
 
       const formData = new FormData();
       formData.append("file", file);
@@ -111,7 +111,7 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
       }
       console.log('Extracted OCR text:', extractedText);
 
-      toast({ title: "Sending to Gemini…", description: "Analyzing extracted text…" });
+      // Hide intermediate toasts: toast({ title: "Sending to Gemini…", description: "Analyzing extracted text…" });
       // Use Gemini API to extract trade data
       const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`, {
         method: 'POST',
@@ -171,14 +171,13 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
           setAccountSummary(null);
           setRawGeminiOutput(cleanedText);
         }
-      } else {
-        setExtractedTrades([]);
-        setAccountSummary(null);
-        toast({ title: "Unable to extract valid trades from Gemini output.", description: "Showing raw Gemini output below.", variant: "destructive" });
-        // Optionally, show raw Gemini output in the UI (e.g., set a state for raw output)
-        setRawGeminiOutput(geminiText || '');
-        console.log('Raw Gemini output:', geminiText);
+        return; // Only show success or error toast, so return here if successful
       }
+      setExtractedTrades([]);
+      setAccountSummary(null);
+      toast({ title: "Unable to extract valid trades from Gemini output.", description: "Showing raw Gemini output below.", variant: "destructive" });
+      setRawGeminiOutput(geminiText || '');
+      console.log('Raw Gemini output:', geminiText);
     } catch (error) {
       console.error('OCR/Gemini Error:', error);
       toast({ title: "Extraction failed", description: String(error), variant: "destructive" });
