@@ -390,7 +390,7 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
         <CardHeader>
           <CardTitle className="text-white flex items-center">
             <Image className="h-5 w-5 mr-2" />
-            Screenshot Upload (Optional)
+            Screenshot Upload
           </CardTitle>
           <CardDescription className="text-slate-400">
             Upload your P&L screenshot for automatic data extraction
@@ -424,47 +424,7 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
                     {ocrProcessing ? 'Processing...' : 'Extract Data from Screenshot'}
                   </Button>
                   
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      // Test with sample data
-                      const sampleTrades: ExtractedTrade[] = [
-                        {
-                          id: `test-${Date.now()}`,
-                          symbol: 'EURUSD',
-                          trade_type: 'buy',
-                          lot_size: '0.10',
-                          entry_price: '1.12345',
-                          exit_price: '1.12445',
-                          pnl: '10.00',
-                          trade_date: new Date().toISOString().split('T')[0],
-                          strategy: 'Test Strategy',
-                          notes: 'This is a test note.'
-                        },
-                        {
-                          id: `test-${Date.now()}-2`,
-                          symbol: 'GBPJPY',
-                          trade_type: 'sell',
-                          lot_size: '0.05',
-                          entry_price: '185.123',
-                          exit_price: '185.098',
-                          pnl: '-12.50',
-                          trade_date: new Date().toISOString().split('T')[0],
-                          strategy: '',
-                          notes: ''
-                        }
-                      ];
-                      setExtractedTrades(sampleTrades);
-                      toast({
-                        title: "Test Data Loaded",
-                        description: "Loaded 2 sample trades for testing.",
-                      });
-                    }}
-                    variant="outline"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                  >
-                    Test with Sample Data
-                  </Button>
+
                 </div>
               </div>
             )}

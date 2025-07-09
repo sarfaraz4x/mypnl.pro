@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { Sparkles, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import Auth from './Auth';
@@ -11,6 +12,9 @@ import Settings from '@/components/Settings';
 import Pricing from '@/components/Pricing';
 import UsageLimitModal from '@/components/UsageLimitModal';
 import { useUsageLimit } from '@/hooks/useUsageLimit';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import LegalInfo from '@/components/LegalInfo';
+import AnalyticsIllustration from '@/components/AnalyticsIllustration';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -18,6 +22,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const { hasReachedLimit, refreshUsageCount } = useUsageLimit();
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -60,40 +65,40 @@ const Index = () => {
     // Professional, creative landing page (inline for now)
     return (
       <div className="font-sans min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white dark:text-white transition-colors duration-300 flex flex-col">
-        {/* Theme Toggle */}
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-          <span className="text-xs text-slate-400">Light</span>
-          {/* Simple theme toggle */}
-          <button
-            aria-label="Toggle theme"
-            className="w-10 h-6 bg-slate-700 rounded-full flex items-center px-1 focus:outline-none"
-            onClick={() => {
-              document.documentElement.classList.toggle('dark');
-            }}
-          >
-            <span className="block w-4 h-4 bg-white rounded-full shadow transform transition-transform dark:translate-x-4" />
-          </button>
-          <span className="text-xs text-slate-400">Dark</span>
-        </div>
+        {/* Theme Toggle removed */}
 
         {/* Hero Section */}
-        <section className="flex-1 flex flex-col md:flex-row items-center justify-center gap-12 px-6 md:px-16 py-20 md:py-32 relative z-10">
+                                <section className="flex-1 flex flex-col items-center justify-center gap-8 px-6 py-20 md:py-24 relative z-10">
           {/* Left: Headline and subheadline */}
-          <div className="flex-1 flex flex-col gap-6 max-w-xl items-start justify-center md:items-start md:justify-center text-left">
+                              <div className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-12">
+            <div className="flex-1 flex flex-col gap-6 max-w-xl items-start justify-center text-left">
             <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg">
-              Your <span className="text-blue-500">Trading</span> Dashboard, <span className="text-green-400">Reimagined</span>
+              Turn Your <span className="text-blue-500">Trading</span> Screenshots into <span className="text-green-400">Smart Insights</span> in a Second.
             </h1>
-            <p className="text-lg md:text-2xl text-slate-300 mb-8 max-w-xl">
-              Analyze, reflect, and improve. All your trades, insights, and performance in one beautiful, secure place.
+                        <p className="text-lg md:text-2xl text-slate-300 mb-6 max-w-xl">
+              No more manual logging. Just upload and let AI do the math — profits, patterns, and performance tracked automatically.
             </p>
-            <ul className="flex flex-wrap gap-3 mb-2">
+                                    <ul className="flex flex-wrap gap-3 mb-2">
               <li className="inline-flex items-center gap-2 bg-slate-800/70 px-3 py-1 rounded-full text-sm text-slate-200"><svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg> Secure & Private</li>
               <li className="inline-flex items-center gap-2 bg-slate-800/70 px-3 py-1 rounded-full text-sm text-slate-200"><svg className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg> Real-time Insights</li>
+              <li className="inline-flex items-center gap-2 bg-slate-800/70 px-3 py-1 rounded-full text-sm text-slate-200"><Sparkles className="h-5 w-5 text-purple-400" /> AI Featured</li>
             </ul>
+            </div>
+            <div className="flex-1 flex items-center justify-center w-full max-w-md md:justify-end">
+              <Auth />
+            </div>
           </div>
-          {/* Right: Auth section */}
-          <div className="flex-1 flex items-center justify-center w-full max-w-md md:justify-end md:items-center">
-            <Auth />
+          {/* Illustration section */}
+                              <div className="w-full max-w-7xl flex items-center justify-center">
+            <AnalyticsIllustration />
+          </div>
+
+                    <div className="w-full max-w-4xl text-center mt-4">
+            <p className="text-lg md:text-xl text-slate-400 leading-relaxed italic">
+              Every elite trader journals. Why? Because <span className="text-blue-400 font-medium">consistency</span> isn't built on memory—it's built on <span className="text-green-400 font-medium">data</span>.
+              <br />
+              <span className="text-blue-400 font-semibold">My</span><span className="text-green-400 font-semibold">PnL</span> helps you uncover your patterns, fix your blind spots, and turn every trade into a learning moment.
+            </p>
           </div>
         </section>
 
@@ -120,6 +125,16 @@ const Index = () => {
             </div>
           ))}
         </section>
+
+        {/* Call to Action Text */}
+        <div className="text-center max-w-3xl mx-auto px-6 pb-16">
+          <p className="text-2xl font-semibold text-slate-200 leading-relaxed">
+            If you’re not journaling your trades, you’re leaving profits on the table.
+          </p>
+          <p className="text-lg text-slate-400 mt-4">
+            Level up your trading mindset—start documenting, analyzing, and improving with MyPnL.
+          </p>
+        </div>
 
         {/* Testimonials Section */}
         <section className="w-full max-w-6xl mx-auto px-6 py-16">
@@ -218,20 +233,31 @@ const Index = () => {
         {/* Footer */}
         <footer className="w-full bg-slate-900/90 py-8 px-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-slate-800">
           <div className="flex items-center gap-2">
-            <svg className="h-6 w-6 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
-            <span className="font-bold text-lg text-white">MyPnL</span>
+            <img src="/logo.png" alt="MyPnL Logo" className="h-8 w-auto" />
+            <span className="font-bold text-lg text-white">My PnL</span>
           </div>
-          <div className="flex gap-6 text-slate-400 text-sm">
-            <a href="#" className="hover:text-blue-400 transition">Privacy</a>
-            <a href="#" className="hover:text-blue-400 transition">Terms</a>
-            <a href="#" className="hover:text-blue-400 transition">Contact</a>
+                    <div className="flex gap-6 text-slate-400 text-sm">
+            <button onClick={() => setIsLegalModalOpen(true)} className="hover:text-blue-400 transition">Privacy & Terms</button>
+            <button onClick={() => setIsLegalModalOpen(true)} className="hover:text-blue-400 transition">Contact</button>
           </div>
           <div className="flex gap-4">
             <a href="#" aria-label="Twitter" className="hover:text-blue-400 transition"><svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0022.4.36a9.09 9.09 0 01-2.88 1.1A4.52 4.52 0 0016.11 0c-2.5 0-4.52 2.02-4.52 4.52 0 .35.04.7.11 1.03C7.69 5.4 4.07 3.7 1.64 1.15c-.38.65-.6 1.4-.6 2.2 0 1.52.77 2.86 1.94 3.65A4.48 4.48 0 01.96 6v.06c0 2.13 1.52 3.9 3.54 4.3-.37.1-.76.16-1.16.16-.28 0-.55-.03-.81-.08.55 1.7 2.16 2.94 4.07 2.97A9.05 9.05 0 010 19.54a12.8 12.8 0 006.92 2.03c8.3 0 12.85-6.88 12.85-12.85 0-.2 0-.39-.01-.58A9.22 9.22 0 0023 3z" /></svg></a>
-            <a href="#" aria-label="LinkedIn" className="hover:text-blue-400 transition"><svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg></a>
+                        <a href="#" aria-label="LinkedIn" className="hover:text-blue-400 transition"><svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-4 0v7h-4v-7a6 6 0 016-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg></a>
+            <a href="https://www.instagram.com/trading__4x" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-blue-400 transition"><Instagram className="h-5 w-5" /></a>
           </div>
           <div className="text-xs text-slate-500 mt-2 md:mt-0">© {new Date().getFullYear()} MyPnL. All rights reserved.</div>
-        </footer>
+                </footer>
+
+        <Dialog open={isLegalModalOpen} onOpenChange={setIsLegalModalOpen}>
+          <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-white">Legal Information</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[80vh] overflow-y-auto pr-4">
+              <LegalInfo />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

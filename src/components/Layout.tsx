@@ -53,7 +53,10 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
   const NavigationContent = () => (
     <>
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-white mb-8">MyPnL</h1>
+        <div className="flex items-center mb-8">
+          <img src="/logo.png" alt="MyPnL Logo" className="h-10 w-auto" />
+          <span className="ml-3 text-2xl font-bold text-white">My PnL</span>
+        </div>
         <nav className="space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
