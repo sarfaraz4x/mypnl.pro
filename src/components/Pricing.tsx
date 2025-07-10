@@ -5,16 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Check, Crown, Zap, Infinity } from 'lucide-react';
+import { Check, Crown, Zap, Infinity, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Pricing = () => {
   const [uploadsCount, setUploadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUploadsCount();
+    checkLifetimeAccess();
   }, []);
 
   const fetchUploadsCount = async () => {
@@ -30,6 +32,31 @@ const Pricing = () => {
       console.error('Error fetching uploads count:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkLifetimeAccess = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('plan_type, status')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking subscription:', error);
+        return;
+      }
+
+      if (data && data.plan_type === 'lifetime') {
+        setHasLifetimeAccess(true);
+      }
+    } catch (error) {
+      console.error('Error checking lifetime access:', error);
     }
   };
 
@@ -120,6 +147,12 @@ const Pricing = () => {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">Pricing Plans</h1>
         <p className="text-slate-400">Choose the perfect plan for your trading needs</p>
+        {hasLifetimeAccess && (
+          <div className="mt-4 inline-flex items-center space-x-2 bg-green-600/20 border border-green-500/30 rounded-lg px-4 py-2">
+            <Star className="h-5 w-5 text-green-400" />
+            <span className="text-green-400 font-semibold">Lifetime Access Active</span>
+          </div>
+        )}
       </div>
 
       {/* Current Usage */}
@@ -137,7 +170,7 @@ const Pricing = () => {
               <span className="text-white font-semibold">{uploadsCount}/10</span>
             </div>
             <Progress value={usagePercentage} className="h-2" />
-            {uploadsCount >= 10 && (
+            {uploadsCount >= 10 && !hasLifetimeAccess && (
               <p className="text-red-400 text-sm mt-2">
                 Upload limit reached. Upgrade to continue adding trades.
               </p>

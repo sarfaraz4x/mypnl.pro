@@ -23,6 +23,7 @@ interface Trade {
   notes?: string;
   screenshot_url?: string;
   trade_type?: string;
+  strategy_chart_url?: string | null;
 }
 
 const TradeJournal = () => {
@@ -33,6 +34,9 @@ const TradeJournal = () => {
   const [filterStrategy, setFilterStrategy] = useState('all');
   const [filterResult, setFilterResult] = useState('all');
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState<any>(null);
+  const [strategyChartFile, setStrategyChartFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -129,6 +133,79 @@ const TradeJournal = () => {
 
   const formatPrice = (price: number) => price.toFixed(5);
   const formatPnL = (pnl: number) => `$${pnl.toFixed(2)}`;
+
+  const handleEditClick = (trade: Trade) => {
+    setSelectedTrade(trade);
+    setEditForm({ ...trade });
+    setEditMode(true);
+    setStrategyChartFile(null);
+  };
+
+  const handleEditChange = (field: string, value: any) => {
+    setEditForm((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleStrategyChartFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setStrategyChartFile(e.target.files[0]);
+    }
+  };
+
+  const handleEditSave = async () => {
+    try {
+      let strategyChartUrl = editForm.strategy_chart_url || null;
+      if (strategyChartFile) {
+        // Upload to Supabase Storage
+        const user = (await supabase.auth.getUser()).data.user;
+        if (!user) throw new Error('User not authenticated');
+        const fileExt = strategyChartFile.name.split('.').pop();
+        const fileName = `${user.id}/strategy-chart-${Date.now()}.${fileExt}`;
+        const { data, error } = await supabase.storage
+          .from('trade-screenshots')
+          .upload(fileName, strategyChartFile);
+        if (error) throw error;
+        const { data: urlData } = supabase.storage
+          .from('trade-screenshots')
+          .getPublicUrl(fileName);
+        strategyChartUrl = urlData.publicUrl;
+      }
+      const { error } = await supabase
+        .from('trades')
+        .update({
+          trade_date: editForm.trade_date,
+          symbol: editForm.symbol,
+          entry_price: parseFloat(editForm.entry_price),
+          exit_price: parseFloat(editForm.exit_price),
+          lot_size: parseFloat(editForm.lot_size),
+          pnl: parseFloat(editForm.pnl),
+          strategy_tag: editForm.strategy_tag || null,
+          notes: editForm.notes || null,
+          trade_type: editForm.trade_type || null,
+          strategy_chart_url: strategyChartUrl,
+        })
+        .eq('id', editForm.id);
+      if (error) throw error;
+      toast({ title: 'Trade updated', description: 'Trade updated successfully.' });
+      setEditMode(false);
+      setSelectedTrade(null);
+      fetchTrades();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteTrade = async (tradeId: string) => {
+    if (!window.confirm('Are you sure you want to delete this trade?')) return;
+    try {
+      const { error } = await supabase.from('trades').delete().eq('id', tradeId);
+      if (error) throw error;
+      toast({ title: 'Trade deleted', description: 'Trade deleted successfully.' });
+      setSelectedTrade(null);
+      fetchTrades();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
 
   if (loading) {
     return (
@@ -273,25 +350,111 @@ const TradeJournal = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Dialog>
+                      <Dialog open={selectedTrade?.id === trade.id} onOpenChange={(open) => { if (!open) { setSelectedTrade(null); setEditMode(false); } }}>
                         <DialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedTrade(trade)}
+                            onClick={() => handleEditClick(trade)}
                             className="text-slate-400 hover:text-white"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-4xl">
+                        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-4xl overflow-y-auto max-h-[80vh]">
                           <DialogHeader>
-                            <DialogTitle>Trade Details - {selectedTrade?.symbol}</DialogTitle>
+                            <DialogTitle>Trade Details - {editForm?.symbol || selectedTrade?.symbol}</DialogTitle>
                           </DialogHeader>
-                          {selectedTrade && (
-                            <div className={`grid ${selectedTrade.screenshot_url ? 'grid-cols-1 md:grid-cols-2 gap-6' : 'grid-cols-1'}`}>
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                          {editMode && editForm ? (
+                            <>
+                              <div className="flex flex-col md:flex-row gap-6 py-4">
+                                {/* Left: Editable fields */}
+                                <div className="w-full md:w-1/2 space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="text-sm text-slate-400">Date</label>
+                                      <Input type="date" value={editForm.trade_date} onChange={e => handleEditChange('trade_date', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Symbol</label>
+                                      <Input value={editForm.symbol} onChange={e => handleEditChange('symbol', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Entry Price</label>
+                                      <Input type="number" step="0.00001" value={editForm.entry_price} onChange={e => handleEditChange('entry_price', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Exit Price</label>
+                                      <Input type="number" step="0.00001" value={editForm.exit_price} onChange={e => handleEditChange('exit_price', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Lot Size</label>
+                                      <Input type="number" step="0.01" value={editForm.lot_size} onChange={e => handleEditChange('lot_size', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">P&L</label>
+                                      <Input type="number" step="0.01" value={editForm.pnl} onChange={e => handleEditChange('pnl', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Trade Type</label>
+                                      <Select onValueChange={value => handleEditChange('trade_type', value)} defaultValue={editForm.trade_type}>
+                                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-slate-700 border-slate-600">
+                                          <SelectItem value="buy">Buy</SelectItem>
+                                          <SelectItem value="sell">Sell</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Strategy</label>
+                                      <Input value={editForm.strategy_tag || ''} onChange={e => handleEditChange('strategy_tag', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                    <div>
+                                      <label className="text-sm text-slate-400">Notes</label>
+                                      <Input value={editForm.notes || ''} onChange={e => handleEditChange('notes', e.target.value)} className="bg-slate-700 border-slate-600 text-white" />
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* Right: Screenshot */}
+                                {editForm.screenshot_url && (
+                                  <div className="w-full md:w-1/2 flex flex-col items-center md:sticky md:top-0">
+                                    <label className="text-sm text-slate-400 mb-2 block">Screenshot</label>
+                                    <div className="overflow-x-auto w-full flex justify-center">
+                                      <img
+                                        src={editForm.screenshot_url}
+                                        alt="Trade screenshot"
+                                        className="w-full max-w-md max-h-96 rounded-lg border border-slate-600 object-contain"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Strategy Chart Upload at Bottom (always visible) */}
+                              <div className="mt-6 w-full flex flex-col items-center">
+                                <label className="text-sm text-slate-400">Strategy Chart Image</label>
+                                <div className="w-full max-w-md">
+                                  <Input type="file" accept="image/*" onChange={handleStrategyChartFile} className="bg-slate-700 border-slate-600 text-white" />
+                                  {editForm?.strategy_chart_url && (
+                                    <div className="mt-2 flex justify-center overflow-x-auto">
+                                      <img src={editForm.strategy_chart_url} alt="Strategy Chart" className="w-full max-w-md max-h-96 rounded border border-slate-600 object-contain" />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Save and Delete Buttons at Bottom */}
+                              <div className="flex flex-col md:flex-row gap-4 justify-between pt-6 w-full">
+                                <Button onClick={handleEditSave} className="bg-green-600 hover:bg-green-700 w-full md:w-auto">Save Changes</Button>
+                                <Button onClick={() => handleDeleteTrade(editForm.id)} className="bg-red-600 hover:bg-red-700 w-full md:w-auto">Delete Trade</Button>
+                              </div>
+                            </>
+                          ) : selectedTrade && (
+                            <>
+                              <div className="flex flex-col md:flex-row gap-6 py-4">
+                                {/* Left: Details */}
+                                <div className="w-full md:w-1/2 space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
                                     <label className="text-sm text-slate-400">Date</label>
                                     <p className="text-white">{new Date(selectedTrade.trade_date).toLocaleDateString()}</p>
@@ -328,19 +491,15 @@ const TradeJournal = () => {
                                   </div>
                                   <div>
                                     <label className="text-sm text-slate-400">P&L</label>
-                                    <p className={`font-semibold ${selectedTrade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                      {formatPnL(selectedTrade.pnl)}
-                                    </p>
+                                      <p className={`font-semibold ${selectedTrade.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatPnL(selectedTrade.pnl)}</p>
+                                    </div>
                                   </div>
-                                </div>
-                                
                                 {selectedTrade.strategy_tag && (
                                   <div>
                                     <label className="text-sm text-slate-400">Strategy</label>
                                     <p className="text-white">{selectedTrade.strategy_tag}</p>
                                   </div>
                                 )}
-                                
                                 {selectedTrade.notes && (
                                   <div>
                                     <label className="text-sm text-slate-400">Notes</label>
@@ -348,20 +507,34 @@ const TradeJournal = () => {
                                   </div>
                                 )}
                               </div>
-
+                                {/* Right: Screenshot */}
                               {selectedTrade.screenshot_url && (
-                                <div>
+                                <div className="w-full md:w-1/2 flex flex-col items-center md:sticky md:top-0">
                                   <label className="text-sm text-slate-400 mb-2 block">Screenshot</label>
-                                  <div className="overflow-auto max-h-[60vh]">
+                                  <div className="overflow-x-auto w-full flex justify-center">
                                     <img
                                       src={selectedTrade.screenshot_url}
                                       alt="Trade screenshot"
-                                      className="w-full h-auto rounded-lg border border-slate-600"
+                                      className="w-full max-w-md max-h-96 rounded-lg border border-slate-600 object-contain"
                                     />
                                   </div>
                                 </div>
                               )}
                             </div>
+                              {/* Strategy Chart at Bottom (always visible) */}
+                              {selectedTrade?.strategy_chart_url && (
+                                <div className="mt-6 w-full flex flex-col items-center">
+                                  <label className="text-sm text-slate-400">Strategy Chart Image</label>
+                                  <div className="mt-2 flex justify-center w-full max-w-md overflow-x-auto">
+                                    <img src={selectedTrade.strategy_chart_url} alt="Strategy Chart" className="w-full max-w-md max-h-96 rounded border border-slate-600 object-contain" />
+                                  </div>
+                                </div>
+                              )}
+                              {/* Edit button at bottom right if not in edit mode */}
+                              <div className="flex justify-end pt-4 w-full">
+                                <Button onClick={() => setEditMode(true)} className="bg-blue-600 hover:bg-blue-700">Edit</Button>
+                            </div>
+                            </>
                           )}
                         </DialogContent>
                       </Dialog>

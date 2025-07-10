@@ -55,6 +55,7 @@ export type Database = {
           trade_type: string | null
           updated_at: string
           user_id: string
+          strategy_chart_url: string | null
         }
         Insert: {
           created_at?: string
@@ -71,6 +72,7 @@ export type Database = {
           trade_type?: string | null
           updated_at?: string
           user_id: string
+          strategy_chart_url?: string | null
         }
         Update: {
           created_at?: string
@@ -87,6 +89,40 @@ export type Database = {
           trade_type?: string | null
           updated_at?: string
           user_id?: string
+          strategy_chart_url?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan_type: string
+          status: string
+          start_date: string
+          end_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan_type: string
+          status?: string
+          start_date?: string
+          end_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan_type?: string
+          status?: string
+          start_date?: string
+          end_date?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

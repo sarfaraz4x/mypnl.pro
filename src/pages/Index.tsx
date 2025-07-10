@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -15,6 +15,7 @@ import { useUsageLimit } from '@/hooks/useUsageLimit';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import LegalInfo from '@/components/LegalInfo';
 import AnalyticsIllustration from '@/components/AnalyticsIllustration';
+import Navbar from '@/components/Navbar';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -23,6 +24,9 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const { hasReachedLimit, refreshUsageCount } = useUsageLimit();
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  // Ref to track previous tab for dialog/modal cleanup if needed
+  const prevTabRef = useRef(activeTab);
 
   useEffect(() => {
     // Set up auth state listener
@@ -42,6 +46,24 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // Refresh upload limit and close dialogs on tab change
+  useEffect(() => {
+    if (activeTab === 'upload') {
+      refreshUsageCount();
+    }
+    // If you have any modal/dialog state, reset it here
+    // Example: setIsLegalModalOpen(false);
+    prevTabRef.current = activeTab;
+  }, [activeTab]);
+
+  // Function to set auth mode and scroll to auth section
+  const handleAuthNav = useCallback((mode: 'signin' | 'signup') => {
+    setAuthMode(mode);
+    setTimeout(() => {
+      document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
   }, []);
 
   const handleTabChange = (tab: string) => {
@@ -65,10 +87,11 @@ const Index = () => {
     // Professional, creative landing page (inline for now)
     return (
       <div className="font-sans min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white dark:text-white transition-colors duration-300 flex flex-col">
-        {/* Theme Toggle removed */}
+        {/* Navbar */}
+        <Navbar onAuthNav={handleAuthNav} />
 
         {/* Hero Section */}
-                                <section className="flex-1 flex flex-col items-center justify-center gap-8 px-6 py-20 md:py-24 relative z-10">
+                                <section className="flex-1 flex flex-col items-center justify-center gap-8 px-6 py-20 md:py-24 relative z-10 mt-16">
           {/* Left: Headline and subheadline */}
                               <div className="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-12">
             <div className="flex-1 flex flex-col gap-6 max-w-xl items-start justify-center text-left">
@@ -84,8 +107,8 @@ const Index = () => {
               <li className="inline-flex items-center gap-2 bg-slate-800/70 px-3 py-1 rounded-full text-sm text-slate-200"><Sparkles className="h-5 w-5 text-purple-400" /> AI Featured</li>
             </ul>
             </div>
-            <div className="flex-1 flex items-center justify-center w-full max-w-md md:justify-end">
-              <Auth />
+            <div className="flex-1 flex items-center justify-center w-full max-w-md md:justify-end" id="auth-section">
+              <Auth mode={authMode} onModeChange={setAuthMode} />
             </div>
           </div>
           {/* Illustration section */}
@@ -103,7 +126,7 @@ const Index = () => {
         </section>
 
         {/* Features Section */}
-        <section className="w-full max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <section id="features" className="w-full max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { icon: 'Upload', color: 'text-blue-500', title: 'Auto-Analyze Screenshots', desc: 'Upload MT4/MT5 screenshots for instant trade analysis.' },
             { icon: 'BarChart2', color: 'text-green-500', title: 'Track PnL & Strategy', desc: 'Monitor trades, PnL, strategy, and notes.' },
@@ -136,6 +159,73 @@ const Index = () => {
           </p>
         </div>
 
+        {/* About Section */}
+        <section id="about" className="w-full max-w-6xl mx-auto px-6 py-16">
+          <h2 className="text-3xl font-bold mb-8 text-white text-center">About MyPnL</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h3 className="text-2xl font-semibold text-white mb-4">Built for Traders, by Traders</h3>
+              <p className="text-lg text-slate-300 leading-relaxed">
+                MyPnL was created to solve a simple problem: most traders don't journal their trades consistently. 
+                We've built an AI-powered platform that makes trade journaling effortless and insightful.
+              </p>
+              <p className="text-lg text-slate-300 leading-relaxed">
+                Our mission is to help traders build better habits, identify patterns, and improve their performance 
+                through data-driven insights and automated analysis.
+              </p>
+              <div className="flex items-center space-x-4 pt-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-slate-300">Secure & Private</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-slate-300">AI-Powered</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-slate-300">Real-time</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-800/80 rounded-2xl p-8">
+              <h4 className="text-xl font-semibold text-white mb-4">Why Choose MyPnL?</h4>
+              <ul className="space-y-3">
+                <li className="flex items-start space-x-3">
+                  <svg className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Instant screenshot analysis with AI</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <svg className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Comprehensive PnL tracking</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <svg className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Pattern recognition and insights</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <svg className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Export reports in multiple formats</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <svg className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Mobile-friendly interface</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         {/* Testimonials Section */}
         <section className="w-full max-w-6xl mx-auto px-6 py-16">
           <h2 className="text-2xl font-bold mb-8 text-white text-center">What Traders Say</h2>
@@ -157,7 +247,7 @@ const Index = () => {
           </div>
         </section>
         {/* Pricing Section (duplicated for landing) */}
-        <section className="w-full max-w-6xl mx-auto px-6 py-16">
+        <section id="pricing" className="w-full max-w-6xl mx-auto px-6 py-16">
           <h2 className="text-2xl font-bold mb-8 text-white text-center">Pricing Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Free Plan */}

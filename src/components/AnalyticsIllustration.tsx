@@ -73,6 +73,26 @@ const AnalyticsIllustration = () => {
             <rect x="30" width="5" height="50" y="0" fill="#4ade80" className="animate-bar-up" style={{ animationDelay: '1.5s' }} />
           </g>
 
+          {/* Trading Chart */}
+          <g transform="translate(570, 280)">
+            {/* Chart background */}
+            <rect x="0" y="0" width="120" height="60" fill="#0f172a" stroke="#334155" strokeWidth="1" rx="2" />
+            
+            {/* X and Y axes */}
+            <line x1="10" y1="50" x2="110" y2="50" stroke="#475569" strokeWidth="1" />
+            <line x1="10" y1="10" x2="10" y2="50" stroke="#475569" strokeWidth="1" />
+            
+            {/* Simple trading curve */}
+            <path 
+              d="M10 40 Q30 35 50 25 Q70 15 90 20 Q110 30 110 25" 
+              stroke="#60a5fa" 
+              strokeWidth="2" 
+              fill="none" 
+              className="animate-draw-line"
+              style={{ animationDelay: '2.5s' }}
+            />
+          </g>
+
           {/* Pie Chart */}
           <g transform="translate(510, 130)">
             <circle r="25" fill="#f87171" />
@@ -93,7 +113,7 @@ const AnalyticsIllustration = () => {
           {/* Key Metrics */}
           <g transform="translate(420, 200)" className="animate-fade-in" style={{ animationDelay: '2s' }}>
             <text y="0" fontSize="14" fill="#94a3b8">Total PnL:</text>
-            <text y="20" fontSize="18" fill="#4ade80" fontWeight="bold">+$1,250.75</text>
+            <text y="20" fontSize="14" fill="#4ade80" fontWeight="bold">+$1,250.75</text>
             <text y="50" fontSize="14" fill="#94a3b8">Best Trade:</text>
             <text y="70" fontSize="16" fill="#60a5fa">+$340.10</text>
             <text y="100" fontSize="14" fill="#94a3b8">Worst Trade:</text>
@@ -105,16 +125,16 @@ const AnalyticsIllustration = () => {
 
           {/* Input Trades Table */}
           <g transform="translate(570, 180)" className="animate-fade-in" style={{ animationDelay: '2.2s' }}>
-            <text y="0" fontSize="12" fill="#94a3b8">Recent Trades</text>
-            <rect y="10" width="160" height="95" rx="4" fill="#0f172a" />
-            <text x="10" y="28" fontFamily="monospace" fontSize="12" fill="#cbd5e1">GOLD</text>
-            <text x="90" y="28" fontFamily="monospace" fontSize="12" fill="#4ade80">+$152.30</text>
-            <line x1="5" y1="38" x2="155" y2="38" stroke="#334155" strokeWidth="1"/>
-            <text x="10" y="56" fontFamily="monospace" fontSize="12" fill="#cbd5e1">EURUSD</text>
-            <text x="90" y="56" fontFamily="monospace" fontSize="12" fill="#f87171">-$78.50</text>
-            <line x1="5" y1="66" x2="155" y2="66" stroke="#334155" strokeWidth="1"/>
-            <text x="10" y="84" fontFamily="monospace" fontSize="12" fill="#cbd5e1">GBPUSD</text>
-                        <text x="90" y="84" fontFamily="monospace" fontSize="12" fill="#4ade80">+$210.00</text>
+            <text y="0" fontSize="10" fill="#94a3b8">Recent Trades</text>
+            <rect y="8" width="130" height="75" rx="4" fill="#0f172a" />
+            <text x="8" y="22" fontFamily="monospace" fontSize="10" fill="#cbd5e1">GOLD</text>
+            <text x="70" y="22" fontFamily="monospace" fontSize="10" fill="#4ade80">+$152.30</text>
+            <line x1="5" y1="30" x2="125" y2="30" stroke="#334155" strokeWidth="1"/>
+            <text x="8" y="44" fontFamily="monospace" fontSize="10" fill="#cbd5e1">EURUSD</text>
+            <text x="70" y="44" fontFamily="monospace" fontSize="10" fill="#f87171">-$78.50</text>
+            <line x1="5" y1="52" x2="125" y2="52" stroke="#334155" strokeWidth="1"/>
+            <text x="8" y="66" fontFamily="monospace" fontSize="10" fill="#cbd5e1">GBPUSD</text>
+                        <text x="70" y="66" fontFamily="monospace" fontSize="10" fill="#4ade80">+$210.00</text>
           </g>
 
           {/* Export Buttons */}
@@ -162,6 +182,15 @@ const AnalyticsIllustration = () => {
             to { transform: rotate(0deg); }
           }
           .animate-pie-fill { transform-origin: center; animation: pie-fill 0.8s cubic-bezier(0.5, 0, 0.5, 1) forwards; }
+
+          @keyframes draw-line {
+            from { stroke-dasharray: 0 1000; }
+            to { stroke-dasharray: 1000 0; }
+          }
+          .animate-draw-line { 
+            stroke-dasharray: 0 1000;
+            animation: draw-line 1.5s ease-out forwards; 
+          }
 
         `}</style>
       </svg>

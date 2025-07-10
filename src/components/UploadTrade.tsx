@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Image, Loader2, CheckCircle, AlertCircle, X, Plus } from 'lucide-react';
+import { Upload, Image, Loader2, CheckCircle, AlertCircle, X, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface TradeData {
@@ -67,6 +67,7 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const [rawGeminiOutput, setRawGeminiOutput] = useState<string>('');
+  const [showManualEntry, setShowManualEntry] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
@@ -379,136 +380,271 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
+    <div className="p-6 w-full max-w-screen-2xl mx-auto">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Upload Trade</h1>
-        <p className="text-slate-400">Add a new trade to your journal with screenshot analysis</p>
+        <p className="text-slate-400">Add trades to your journal with AI-powered screenshot analysis or manual entry</p>
       </div>
 
-      {/* Screenshot Upload */}
-      <Card className="bg-slate-800 border-slate-700 mb-6">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center">
-            <Image className="h-5 w-5 mr-2" />
-            Screenshot Upload
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Upload your P&L screenshot for automatic data extraction
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="bg-slate-700 border-slate-600 text-white file:bg-slate-600 file:text-white file:border-0"
-            />
-            
-            {files.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm text-slate-300">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
-                  <span>{files[0].name}</span>
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    onClick={() => processImageWithOCR(files[0])}
-                    disabled={ocrProcessing}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {ocrProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {ocrProcessing ? 'Processing...' : 'Extract Data from Screenshot'}
-                  </Button>
-                  
-
-                </div>
+      {/* Screenshot Upload Card */}
+      <div className="space-y-6">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-500/20 rounded-lg">
+                <Image className="h-5 w-5 text-blue-400" />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Summary Section */}
-      {accountSummary && (
-        <Card className="bg-slate-800 border-slate-700 mb-6">
-          <CardHeader>
-            <CardTitle className="text-white">Account Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {Object.entries(accountSummary).map(([key, value]) => (
-                <div key={key}>
-                  <p className="text-sm text-slate-400 capitalize">{key.replace(/_/g, ' ')}</p>
-                  <p className="text-lg font-semibold text-white">{value}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Extracted Trades Section */}
-      {extractedTrades.length > 0 && (
-        <Card className="bg-slate-800 border-slate-700 mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white">Extracted Trades ({extractedTrades.length})</CardTitle>
-              <div className="space-x-2">
-                <Button
-                  type="button"
-                  onClick={addNewExtractedTrade}
-                  variant="outline"
-                  size="sm"
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Trade
-                </Button>
-                <Button
-                  onClick={handleSaveAllTrades}
-                  disabled={loading || uploading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Save All Trades
-                </Button>
+              <div>
+                <CardTitle className="text-white text-xl">Screenshot Analysis</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Upload P&L screenshots for automatic data extraction
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {extractedTrades.map((trade, index) => (
-              <div key={trade.id} className="border border-slate-600 rounded-lg p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-white font-medium">Trade {index + 1}</h4>
-                  <Button
-                    type="button"
-                    onClick={() => removeExtractedTrade(trade.id)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+            <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+              <Upload className="h-8 w-8 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-300 mb-2">Drop your screenshot here or click to browse</p>
+              <p className="text-sm text-slate-500">Supports JPG, PNG, GIF up to 10MB</p>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Choose File
+              </Button>
+            </div>
+            {files.length > 0 && (
+              <div className="space-y-3 p-4 bg-slate-700/30 rounded-lg border border-slate-600/50">
+                <div className="flex items-center space-x-2 text-sm text-slate-300">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                  <span className="font-medium">{files[0].name}</span>
                 </div>
+                <Button
+                  type="button"
+                  onClick={() => processImageWithOCR(files[0])}
+                  disabled={ocrProcessing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {ocrProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {ocrProcessing ? 'Processing...' : 'Extract Trade Data'}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Account Summary Section */}
+        {accountSummary && (
+          <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white flex items-center">
+                <div className="p-2 bg-green-500/20 rounded-lg mr-3">
+                  <CheckCircle className="h-4 w-4 text-green-400" />
+                </div>
+                Account Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(accountSummary).map(([key, value]) => (
+                  <div key={key} className="bg-slate-700/50 rounded-lg p-3">
+                    <p className="text-xs text-slate-400 uppercase tracking-wide">{key.replace(/_/g, ' ')}</p>
+                    <p className="text-lg font-semibold text-white">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Manual Trade Entry Button and Collapsible Card */}
+        <div>
+          <Button
+            variant="outline"
+            className="mb-2 border-slate-600 text-slate-300 hover:bg-slate-700"
+            onClick={() => setShowManualEntry((prev) => !prev)}
+          >
+            {showManualEntry ? 'Hide Manual Trade Entry' : 'Manual Trade Entry'}
+          </Button>
+          {showManualEntry && (
+            <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm mt-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-white text-lg">Manual Trade Entry</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="symbol" className="text-slate-300 text-sm font-medium">Symbol</Label>
+                      <Input
+                        id="symbol"
+                        value={tradeData.symbol}
+                        onChange={(e) => setTradeData(prev => ({ ...prev, symbol: e.target.value }))}
+                        placeholder="EURUSD, GBPJPY, etc."
+                        className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="trade_type" className="text-slate-300 text-sm font-medium">Trade Type</Label>
+                      <Select onValueChange={(value) => setTradeData(prev => ({ ...prev, trade_type: value }))}>
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white mt-1">
+                          <SelectValue placeholder="Buy or Sell" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-700 border-slate-600">
+                          <SelectItem value="buy">Buy</SelectItem>
+                          <SelectItem value="sell">Sell</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="trade_date" className="text-slate-300 text-sm font-medium">Trade Date</Label>
+                      <Input
+                        id="trade_date"
+                        type="date"
+                        value={tradeData.trade_date}
+                        onChange={(e) => setTradeData(prev => ({ ...prev, trade_date: e.target.value }))}
+                        className="bg-slate-700 border-slate-600 text-white mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lot_size" className="text-slate-300 text-sm font-medium">Lot Size</Label>
+                      <Input
+                        id="lot_size"
+                        type="number"
+                        step="0.01"
+                        value={tradeData.lot_size}
+                        onChange={(e) => setTradeData(prev => ({ ...prev, lot_size: e.target.value }))}
+                        placeholder="0.10"
+                        className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="entry_price" className="text-slate-300 text-sm font-medium">Entry Price</Label>
+                      <Input
+                        id="entry_price"
+                        type="number"
+                        step="0.00001"
+                        value={tradeData.entry_price}
+                        onChange={(e) => setTradeData(prev => ({ ...prev, entry_price: e.target.value }))}
+                        placeholder="1.12345"
+                        className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="exit_price" className="text-slate-300 text-sm font-medium">Exit Price</Label>
+                      <Input
+                        id="exit_price"
+                        type="number"
+                        step="0.00001"
+                        value={tradeData.exit_price}
+                        onChange={(e) => setTradeData(prev => ({ ...prev, exit_price: e.target.value }))}
+                        placeholder="1.12545"
+                        className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pnl" className="text-slate-300 text-sm font-medium">P&L ($)</Label>
+                      <Input
+                        id="pnl"
+                        type="number"
+                        step="0.01"
+                        value={tradeData.pnl}
+                        onChange={(e) => setTradeData(prev => ({ ...prev, pnl: e.target.value }))}
+                        placeholder="15.50 or -12.30"
+                        className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 mt-1"
+                        required
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <Label className="text-slate-300">Symbol</Label>
-                    <Input
-                      value={trade.symbol}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'symbol', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
+                    <Label htmlFor="strategy_tag" className="text-slate-300 text-sm font-medium">Strategy Tag (Optional)</Label>
+                    <Select onValueChange={(value) => setTradeData(prev => ({ ...prev, strategy_tag: value }))}>
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white mt-1">
+                        <SelectValue placeholder="Select a strategy" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-700 border-slate-600">
+                        <SelectItem value="scalping">Scalping</SelectItem>
+                        <SelectItem value="breakout">Breakout</SelectItem>
+                        <SelectItem value="reversal">Reversal</SelectItem>
+                        <SelectItem value="trend-following">Trend Following</SelectItem>
+                        <SelectItem value="range-trading">Range Trading</SelectItem>
+                        <SelectItem value="news-trading">News Trading</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="notes" className="text-slate-300 text-sm font-medium">Notes (Optional)</Label>
+                    <Textarea
+                      id="notes"
+                      value={tradeData.notes}
+                      onChange={(e) => setTradeData(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="What went well? What could be improved?"
+                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 mt-1"
+                      rows={3}
                     />
                   </div>
-                  
-                  <div>
-                    <Label className="text-slate-300">Trade Type</Label>
+                  <Button
+                    type="submit"
+                    disabled={loading || uploading || ocrProcessing}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-medium"
+                  >
+                    {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {uploading ? 'Uploading Screenshot...' : loading ? 'Adding Trade...' : 'Add Single Trade'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Extracted Trades Section */}
+      {extractedTrades.length > 0 && (
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm w-full">
+          <CardHeader className="pb-4 flex flex-row items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Plus className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <CardTitle className="text-white">Extracted Trades ({extractedTrades.length})</CardTitle>
+                <CardDescription className="text-slate-400">Review and edit extracted data</CardDescription>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" onClick={addNewExtractedTrade} variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                <Plus className="h-4 w-4 mr-1" /> Add Trade
+              </Button>
+              <Button onClick={handleSaveAllTrades} disabled={loading || uploading} className="bg-green-600 hover:bg-green-700">
+                {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save All
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {extractedTrades.map((trade, index) => (
+              <div key={trade.id} className="border border-slate-600/50 rounded-lg p-4 bg-slate-700/30 w-full mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                  <div className="flex flex-col min-w-[90px] flex-1">
+                    <Label className="text-slate-300 text-xs">Symbol</Label>
+                    <Input value={trade.symbol} onChange={(e) => updateExtractedTrade(trade.id, 'symbol', e.target.value)} className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[80px]" />
+                  </div>
+                  <div className="flex flex-col min-w-[90px] flex-1">
+                    <Label className="text-slate-300 text-xs">Trade Type</Label>
                     <Select onValueChange={(value) => updateExtractedTrade(trade.id, 'trade_type', value)} defaultValue={trade.trade_type}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[80px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-700 border-slate-600">
@@ -517,91 +653,55 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
-                  <div>
-                    <Label className="text-slate-300">Lot Size</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={trade.lot_size}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'lot_size', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+                  <div className="flex flex-col min-w-[70px] flex-1">
+                    <Label className="text-slate-300 text-xs">Lot Size</Label>
+                    <Input type="number" step="0.01" value={trade.lot_size} onChange={(e) => updateExtractedTrade(trade.id, 'lot_size', e.target.value)} className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[60px]" />
                   </div>
-                  
-                  <div>
-                    <Label className="text-slate-300">Entry Price</Label>
-                    <Input
-                      type="number"
-                      step="0.00001"
-                      value={trade.entry_price}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'entry_price', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+                  <div className="flex flex-col min-w-[110px] flex-1">
+                    <Label className="text-slate-300 text-xs">Entry Price</Label>
+                    <Input type="number" step="0.00001" value={trade.entry_price} onChange={(e) => updateExtractedTrade(trade.id, 'entry_price', e.target.value)} className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[100px]" />
                   </div>
-                  
-                  <div>
-                    <Label className="text-slate-300">Exit Price</Label>
-                    <Input
-                      type="number"
-                      step="0.00001"
-                      value={trade.exit_price}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'exit_price', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+                  <div className="flex flex-col min-w-[110px] flex-1">
+                    <Label className="text-slate-300 text-xs">Exit Price</Label>
+                    <Input type="number" step="0.00001" value={trade.exit_price} onChange={(e) => updateExtractedTrade(trade.id, 'exit_price', e.target.value)} className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[100px]" />
                   </div>
-                  
-                  <div>
-                    <Label className="text-slate-300">P&L ($)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={trade.pnl}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'pnl', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+                  <div className="flex flex-col min-w-[90px] flex-1">
+                    <Label className="text-slate-300 text-xs">P&L ($)</Label>
+                    <Input type="number" step="0.01" value={trade.pnl} onChange={(e) => updateExtractedTrade(trade.id, 'pnl', e.target.value)} className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[80px]" />
                   </div>
-                </div>
-
-                <div>
-                  <Label className="text-slate-300">Trade Date</Label>
-                  <Input
-                    type="date"
-                    value={trade.trade_date}
-                    onChange={(e) => updateExtractedTrade(trade.id, 'trade_date', e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-700/50">
-                  <div>
-                    <Label className="text-slate-300">Strategy (Optional)</Label>
-                    <Input
-                      value={trade.strategy}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'strategy', e.target.value)}
-                      placeholder="e.g. News Fade"
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+                  <div className="flex flex-col min-w-[130px] flex-1">
+                    <Label className="text-slate-300 text-xs">Trade Date</Label>
+                    <Input type="date" value={trade.trade_date} onChange={(e) => updateExtractedTrade(trade.id, 'trade_date', e.target.value)} className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[120px]" />
                   </div>
-                  <div>
-                    <Label className="text-slate-300">Notes (Optional)</Label>
-                    <Textarea
-                      value={trade.notes}
-                      onChange={(e) => updateExtractedTrade(trade.id, 'notes', e.target.value)}
-                      placeholder="e.g. High volume confirmation"
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
+                  <div className="flex flex-col min-w-[120px] flex-1">
+                    <Label className="text-slate-300 text-xs">Strategy</Label>
+                    <Input value={trade.strategy} onChange={(e) => updateExtractedTrade(trade.id, 'strategy', e.target.value)} placeholder="e.g. News Fade" className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[100px]" />
+                  </div>
+                  <div className="flex flex-col min-w-[160px] flex-1">
+                    <Label className="text-slate-300 text-xs">Notes</Label>
+                    <Input value={trade.notes} onChange={(e) => updateExtractedTrade(trade.id, 'notes', e.target.value)} placeholder="e.g. High volume confirmation" className="bg-slate-700 border-slate-600 text-white h-8 px-2 text-xs min-w-[140px]" />
+                  </div>
+                  <div className="flex items-center h-full ml-auto">
+                    <Button type="button" onClick={() => removeExtractedTrade(trade.id)} variant="ghost" size="icon" className="text-red-400 hover:text-red-300 hover:bg-red-900/20 ml-2">
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
             ))}
+            {/* Save All Trades Button at Bottom */}
+            <div className="pt-6 border-t border-slate-700/50">
+              <Button onClick={handleSaveAllTrades} disabled={loading || uploading} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-medium">
+                {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save All Trades ({extractedTrades.length})
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Show raw Gemini output if parsing failed */}
       {rawGeminiOutput && extractedTrades.length === 0 && (
-        <Card className="bg-slate-800 border-slate-700 mb-6">
+        <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white">Raw Gemini Output</CardTitle>
             <CardDescription className="text-slate-400">Could not parse valid trades. Please review the output below and copy manually if needed.</CardDescription>
@@ -611,152 +711,6 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
           </CardContent>
         </Card>
       )}
-
-      {/* Manual Trade Entry Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white">Manual Trade Entry</CardTitle>
-            <CardDescription className="text-slate-400">
-              Enter trade information manually or use extracted data above
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="symbol" className="text-slate-300">Symbol</Label>
-                <Input
-                  id="symbol"
-                  value={tradeData.symbol}
-                  onChange={(e) => setTradeData(prev => ({ ...prev, symbol: e.target.value }))}
-                  placeholder="EURUSD, GBPJPY, etc."
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="trade_type" className="text-slate-300">Trade Type</Label>
-                <Select onValueChange={(value) => setTradeData(prev => ({ ...prev, trade_type: value }))}>
-                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                    <SelectValue placeholder="Buy or Sell" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-700 border-slate-600">
-                    <SelectItem value="buy">Buy</SelectItem>
-                    <SelectItem value="sell">Sell</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="trade_date" className="text-slate-300">Trade Date</Label>
-                <Input
-                  id="trade_date"
-                  type="date"
-                  value={tradeData.trade_date}
-                  onChange={(e) => setTradeData(prev => ({ ...prev, trade_date: e.target.value }))}
-                  className="bg-slate-700 border-slate-600 text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="lot_size" className="text-slate-300">Lot Size</Label>
-                <Input
-                  id="lot_size"
-                  type="number"
-                  step="0.01"
-                  value={tradeData.lot_size}
-                  onChange={(e) => setTradeData(prev => ({ ...prev, lot_size: e.target.value }))}
-                  placeholder="0.10"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="entry_price" className="text-slate-300">Entry Price</Label>
-                <Input
-                  id="entry_price"
-                  type="number"
-                  step="0.00001"
-                  value={tradeData.entry_price}
-                  onChange={(e) => setTradeData(prev => ({ ...prev, entry_price: e.target.value }))}
-                  placeholder="1.12345"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="exit_price" className="text-slate-300">Exit Price</Label>
-                <Input
-                  id="exit_price"
-                  type="number"
-                  step="0.00001"
-                  value={tradeData.exit_price}
-                  onChange={(e) => setTradeData(prev => ({ ...prev, exit_price: e.target.value }))}
-                  placeholder="1.12545"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="pnl" className="text-slate-300">P&L ($)</Label>
-                <Input
-                  id="pnl"
-                  type="number"
-                  step="0.01"
-                  value={tradeData.pnl}
-                  onChange={(e) => setTradeData(prev => ({ ...prev, pnl: e.target.value }))}
-                  placeholder="15.50 or -12.30"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="strategy_tag" className="text-slate-300">Strategy Tag (Optional)</Label>
-              <Select onValueChange={(value) => setTradeData(prev => ({ ...prev, strategy_tag: value }))}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue placeholder="Select a strategy" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="scalping">Scalping</SelectItem>
-                  <SelectItem value="breakout">Breakout</SelectItem>
-                  <SelectItem value="reversal">Reversal</SelectItem>
-                  <SelectItem value="trend-following">Trend Following</SelectItem>
-                  <SelectItem value="range-trading">Range Trading</SelectItem>
-                  <SelectItem value="news-trading">News Trading</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="notes" className="text-slate-300">Notes (Optional)</Label>
-              <Textarea
-                id="notes"
-                value={tradeData.notes}
-                onChange={(e) => setTradeData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="What went well? What could be improved?"
-                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button
-          type="submit"
-          disabled={loading || uploading || ocrProcessing}
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-        >
-          {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {uploading ? 'Uploading Screenshot...' : loading ? 'Adding Trade...' : 'Add Single Trade'}
-        </Button>
-      </form>
     </div>
   );
 };
