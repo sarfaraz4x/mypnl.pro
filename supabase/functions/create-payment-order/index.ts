@@ -57,7 +57,7 @@ serve(async (req) => {
           customer_phone: user.phone || '9999999999', // Use user's phone or a placeholder
         },
         order_meta: {
-          return_url: `http://localhost:8080/payment-status?order_id={order_id}`,
+          return_url: `${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/payment-status?order_id={order_id}`,
         },
       }),
     });
