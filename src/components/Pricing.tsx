@@ -1,17 +1,19 @@
 
 import { useState, useEffect } from 'react';
+import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Check, Crown, Zap, Infinity, Star } from 'lucide-react';
+import { Check, Crown, Zap, Infinity, Star, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Pricing = () => {
   const [uploadsCount, setUploadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,6 +91,7 @@ const Pricing = () => {
       popular: true,
       buttonText: 'Upgrade Now',
       buttonDisabled: false,
+      priceAmount: 99,
     },
     {
       name: 'Yearly Pro',
@@ -104,6 +107,7 @@ const Pricing = () => {
       ],
       buttonText: 'Best Value',
       buttonDisabled: false,
+      priceAmount: 999,
     },
     {
       name: 'Lifetime',
@@ -118,14 +122,55 @@ const Pricing = () => {
       ],
       buttonText: 'One-time Payment',
       buttonDisabled: false,
+      priceAmount: 4999,
     },
   ];
 
-  const handleUpgrade = (planName: string) => {
-    toast({
-      title: "Coming Soon!",
-      description: `${planName} upgrade will be available soon. Payment gateway integration in progress.`,
-    });
+  const handleUpgrade = async (plan: any) => {
+    setIsProcessing(plan.name);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please sign in to upgrade your plan.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-payment-order', {
+        body: {
+          plan: {
+            name: plan.name,
+            price: plan.priceAmount,
+          },
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone || '9999999999',
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.payment_session_id) {
+        const cashfree = await load({ mode: 'production' });
+        cashfree.checkout({ paymentSessionId: data.payment_session_id });
+      } else {
+        throw new Error('Failed to create payment session.');
+      }
+    } catch (error: any) {
+      console.error('Upgrade failed:', error);
+      toast({
+        title: 'Upgrade Failed',
+        description: error.message || 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(null);
+    }
   };
 
   const usagePercentage = Math.min((uploadsCount / 10) * 100, 100);
@@ -230,10 +275,11 @@ const Pricing = () => {
                       ? 'bg-green-600 hover:bg-green-700' 
                       : 'bg-blue-600 hover:bg-blue-700'
                 }`}
-                disabled={plan.buttonDisabled}
-                onClick={() => handleUpgrade(plan.name)}
-              >
-                {plan.buttonText}
+                disabled={plan.buttonDisabled || !!isProcessing}
+                onClick={() => handleUpgrade(plan)}
+>
+                {isProcessing === plan.name && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isProcessing === plan.name ? 'Processing...' : plan.buttonText}
               </Button>
             </CardContent>
           </Card>

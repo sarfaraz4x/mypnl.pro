@@ -12,18 +12,24 @@ serve(async (req) => {
 
   try {
     // Extract plan details and user info from the request body
+    console.log('Processing new payment order request...');
     const { plan, user } = await req.json();
+    console.log('Received plan:', plan);
+    console.log('Received user:', user);
 
     if (!plan || !user) {
+      console.error('Error: Missing plan or user details.');
       throw new Error('Missing plan or user details in the request.');
     }
 
     const cashfreeAppId = Deno.env.get('CASHFREE_APP_ID');
-    const cashfreeSecretKey = Deno.env.get('CASHFREE_WEBHOOK_SECRET'); // This is your secret key
+    const cashfreeSecretKey = Deno.env.get('CASHFREE_SECRET_KEY');
 
     if (!cashfreeAppId || !cashfreeSecretKey) {
+      console.error('Error: Cashfree API credentials not found in environment variables.');
       throw new Error('API credentials are not configured.');
     }
+    console.log('Cashfree App ID found.');
 
     const uniqueOrderId = `order_${user.id}_${Date.now()}`;
 
@@ -54,7 +60,8 @@ serve(async (req) => {
     const responseBody = await response.json();
 
     if (!response.ok) {
-      console.error('Cashfree API error:', responseBody);
+      console.error('Cashfree API request failed with status:', response.status);
+      console.error('Full Cashfree API error response:', responseBody);
       throw new Error(responseBody.message || 'Failed to create payment order.');
     }
 
@@ -65,6 +72,7 @@ serve(async (req) => {
       status: 200,
     })
   } catch (error) {
+    console.error('Error in create-payment-order function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
