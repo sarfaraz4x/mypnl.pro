@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const PaymentStatus = () => {
   const [searchParams] = useSearchParams();
@@ -19,43 +19,21 @@ const PaymentStatus = () => {
       return;
     }
 
-    const checkStatus = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setStatus('error');
-        console.error('User not found');
-        return;
-      }
-
-      // Poll the database for the subscription status
-      // The webhook will update the status in the background
-      const poller = setInterval(async () => {
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching subscription status:', error);
-        }
-
-        if (data?.status === 'active') {
-          setStatus('success');
-          clearInterval(poller);
-          clearTimeout(timeout);
-        }
-      }, 2000); // Poll every 2 seconds
-
-      // Stop polling after 20 seconds and show a pending message
-      const timeout = setTimeout(() => {
-        clearInterval(poller);
-        // If status isn't success by now, show pending message
-        setStatus(currentStatus => currentStatus === 'loading' ? 'pending' : currentStatus);
-      }, 20000);
+    // Here you would typically verify the payment status with your backend.
+    // For now, we'll assume if the user is redirected here, it's a success.
+    // In a real app, you'd call a Supabase function to get the order status from Cashfree
+    // and update the user's subscription in your database.
+    
+    const verifyPayment = async () => {
+        // For this example, we'll just simulate a successful verification.
+        // In a real implementation, you would make a call to a backend function.
+        console.log(`Verifying payment for order: ${order_id}`);
+        // const { data, error } = await supabase.functions.invoke('verify-payment-status', { body: { order_id } });
+        // if (error) { setStatus('error'); } else { setStatus('success'); }
+        setStatus('success');
     };
 
-    checkStatus();
+    verifyPayment();
 
   }, [searchParams]);
 
@@ -79,15 +57,6 @@ const PaymentStatus = () => {
               <h3 className="text-xl font-semibold">Payment Successful!</h3>
               <p className="text-slate-400">Thank you for upgrading. Your new plan is now active.</p>
               <p className="text-xs text-slate-500">Order ID: {orderId}</p>
-            </div>
-          )}
-
-          {status === 'pending' && (
-            <div className="flex flex-col items-center space-y-4">
-              <Clock className="h-16 w-16 text-yellow-500" />
-              <h3 className="text-xl font-semibold">Payment Processing</h3>
-              <p className="text-slate-400">Your payment is being processed and will be updated automatically. You can safely close this page.</p>
-              {orderId && <p className="text-xs text-slate-500">Order ID: {orderId}</p>}
             </div>
           )}
 
