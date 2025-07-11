@@ -31,7 +31,9 @@ serve(async (req) => {
     }
     console.log('Cashfree App ID found.');
 
-    const uniqueOrderId = `order_${user.id}_${Date.now()}`;
+    // Create a shorter order_id that is under Cashfree's 50-character limit
+    const shortOrderId = `${user.id.replace(/-/g, '')}${Date.now().toString(36)}`;
+    const uniqueOrderId = `order_${shortOrderId.slice(0, 43)}`; // Ensure it's under 50 chars
 
     const response = await fetch('https://api.cashfree.com/pg/orders', {
       method: 'POST',
