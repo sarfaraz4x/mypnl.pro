@@ -14,6 +14,8 @@ serve(async (req) => {
     // Extract plan details and user info from the request body
     console.log('Processing new payment order request...');
     const { plan, user } = await req.json();
+    console.log(`Received request for plan: ${plan.name}, user: ${user.id}`);
+
     console.log('Received plan:', plan);
     console.log('Received user:', user);
 
@@ -35,7 +37,8 @@ serve(async (req) => {
     const shortOrderId = `${user.id.replace(/-/g, '')}${Date.now().toString(36)}`;
     const uniqueOrderId = `order_${shortOrderId.slice(0, 43)}`; // Ensure it's under 50 chars
 
-    const response = await fetch('https://api.cashfree.com/pg/orders', {
+    // Use the Cashfree Sandbox endpoint for testing
+    const response = await fetch('https://sandbox.cashfree.com/pg/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

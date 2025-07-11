@@ -156,7 +156,7 @@ const Pricing = () => {
       if (error) throw error;
 
       if (data.payment_session_id) {
-        const cashfree = await load({ mode: 'production' });
+        const cashfree = await load({ mode: 'sandbox' });
         cashfree.checkout({ paymentSessionId: data.payment_session_id });
       } else {
         throw new Error('Failed to create payment session.');
