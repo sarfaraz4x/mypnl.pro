@@ -14,6 +14,7 @@
     "check-db": "node scripts/check-database.js"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.5",
     "@google-cloud/vision": "^5.2.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -47,11 +48,14 @@
     "@tanstack/react-query": "^5.56.2",
     "@types/react-calendar-heatmap": "^1.9.0",
     "@types/react-tooltip": "^3.11.0",
+    "body-parse": "^0.1.0",
+    "body-parser": "^2.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
+    "express": "^5.1.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
@@ -85,9 +89,23 @@
     "globals": "^15.9.0",
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
+    "supabase": "^2.30.4",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  }
+  },
+  "description": "## Project info",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sarfaraz4x/mypnl0.1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sarfaraz4x/mypnl0.1/issues"
+  },
+  "homepage": "https://github.com/sarfaraz4x/mypnl0.1#readme"
 }
