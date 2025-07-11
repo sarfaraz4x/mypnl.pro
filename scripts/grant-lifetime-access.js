@@ -1,48 +1,49 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
-// Supabase configuration
-const SUPABASE_URL = "https://mdxskctiwpiwlzkdihdp.supabase.co";
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_SERVICE_KEY) {
-  console.error('Error: SUPABASE_SERVICE_ROLE_KEY environment variable is required');
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing required environment variables: VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function grantLifetimeAccess(email) {
   try {
-    console.log(`Granting lifetime access to user: ${email}`);
-
-    // First, find the user by email
-    const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+    console.log(`\n🔍 Looking up user with email: ${email}`);
+    
+    // Get user by email
+    const { data: user, error: userError } = await supabase.auth.admin.getUserByEmail(email);
     
     if (userError) {
-      throw new Error(`Error fetching users: ${userError.message}`);
+      console.error('❌ Error finding user:', userError.message);
+      return false;
     }
-
-    const user = users.users.find(u => u.email === email);
     
-    if (!user) {
-      throw new Error(`User with email ${email} not found`);
+    if (!user.user) {
+      console.error('❌ User not found');
+      return false;
     }
-
-    console.log(`Found user: ${user.id} (${user.email})`);
-
-    // Check if user already has a subscription
-    const { data: existingSubscription, error: subError } = await supabase
+    
+    console.log(`✅ Found user: ${user.user.id}`);
+    
+    // Check if subscription already exists
+    const { data: existingSubscription, error: checkError } = await supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.user.id)
       .single();
-
-    if (subError && subError.code !== 'PGRST116') {
-      throw new Error(`Error checking existing subscription: ${subError.message}`);
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Error checking existing subscription:', checkError.message);
+      return false;
     }
-
+    
     if (existingSubscription) {
-      // Update existing subscription to lifetime
+      // Update existing subscription
       const { error: updateError } = await supabase
         .from('subscriptions')
         .update({
@@ -50,53 +51,62 @@ async function grantLifetimeAccess(email) {
           status: 'active',
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user.id);
-
+        .eq('user_id', user.user.id);
+      
       if (updateError) {
-        throw new Error(`Error updating subscription: ${updateError.message}`);
+        console.error('❌ Error updating subscription:', updateError.message);
+        return false;
       }
-
-      console.log('✅ Successfully updated existing subscription to lifetime access');
+      
+      console.log('✅ Updated existing subscription to lifetime');
     } else {
-      // Create new lifetime subscription
+      // Create new subscription
       const { error: insertError } = await supabase
         .from('subscriptions')
         .insert({
-          user_id: user.id,
+          user_id: user.user.id,
           plan_type: 'lifetime',
           status: 'active',
           start_date: new Date().toISOString()
         });
-
+      
       if (insertError) {
-        throw new Error(`Error creating subscription: ${insertError.message}`);
+        console.error('❌ Error creating subscription:', insertError.message);
+        return false;
       }
-
-      console.log('✅ Successfully created lifetime subscription');
+      
+      console.log('✅ Created new lifetime subscription');
     }
-
-    console.log(`🎉 Lifetime access granted to ${email}`);
+    
+    console.log('🎉 Lifetime access granted successfully!');
+    return true;
     
   } catch (error) {
-    console.error('❌ Error granting lifetime access:', error.message);
+    console.error('❌ Unexpected error:', error.message);
+    return false;
+  }
+}
+
+async function main() {
+  const email = process.argv[2];
+  
+  if (!email) {
+    console.error('❌ Please provide an email address as an argument');
+    console.log('Usage: node grant-lifetime-access.js <email>');
+    process.exit(1);
+  }
+  
+  console.log('🚀 Starting lifetime access grant process...');
+  
+  const success = await grantLifetimeAccess(email);
+  
+  if (success) {
+    console.log('\n✅ Process completed successfully!');
+    console.log(`📧 User ${email} now has lifetime access`);
+  } else {
+    console.log('\n❌ Process failed');
     process.exit(1);
   }
 }
 
-// Get email from command line argument
-const email = process.argv[2];
-
-if (!email) {
-  console.error('Usage: node grant-lifetime-access.js <email>');
-  console.error('Example: node grant-lifetime-access.js sarfarazalam.sa460@gmail.com');
-  process.exit(1);
-}
-
-// Validate email format
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-if (!emailRegex.test(email)) {
-  console.error('❌ Invalid email format');
-  process.exit(1);
-}
-
-grantLifetimeAccess(email); 
+main(); 

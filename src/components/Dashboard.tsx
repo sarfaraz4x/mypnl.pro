@@ -46,6 +46,16 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchTrades();
+    
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.log('Dashboard loading timeout, forcing load');
+        setLoading(false);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const fetchTrades = async () => {
@@ -61,6 +71,8 @@ const Dashboard = () => {
       calculateStats(data || []);
     } catch (error) {
       console.error('Error fetching trades:', error);
+      setTrades([]);
+      calculateStats([]);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Sparkles, Instagram } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -22,16 +22,15 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
-  const { hasReachedLimit, refreshUsageCount } = useUsageLimit();
+  const { hasReachedLimit } = useUsageLimit();
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  // Ref to track previous tab for dialog/modal cleanup if needed
-  const prevTabRef = useRef(activeTab);
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -40,22 +39,30 @@ const Index = () => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch((error) => {
+      console.error('Error getting session:', error);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('Loading timeout reached, forcing load');
+      setLoading(false);
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
-  // Refresh upload limit and close dialogs on tab change
+  // Reset modal states when tab changes
   useEffect(() => {
-    if (activeTab === 'upload') {
-      refreshUsageCount();
-    }
-    // If you have any modal/dialog state, reset it here
-    // Example: setIsLegalModalOpen(false);
-    prevTabRef.current = activeTab;
+    setIsLegalModalOpen(false);
   }, [activeTab]);
 
   // Function to set auth mode and scroll to auth section
@@ -66,19 +73,23 @@ const Index = () => {
     }, 50);
   }, []);
 
-  const handleTabChange = (tab: string) => {
+  const handleTabChange = useCallback((tab: string) => {
     // If trying to access upload page and limit is reached, redirect to pricing
     if (tab === 'upload' && hasReachedLimit) {
       setActiveTab('pricing');
       return;
     }
+    
     setActiveTab(tab);
-  };
+  }, [hasReachedLimit]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400 mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -360,7 +371,7 @@ const Index = () => {
         return hasReachedLimit ? (
           <UsageLimitModal onUpgrade={() => setActiveTab('pricing')} />
         ) : (
-          <UploadTrade onTradeAdded={refreshUsageCount} />
+                          <UploadTrade />
         );
       case 'journal':
         return <TradeJournal />;

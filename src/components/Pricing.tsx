@@ -254,10 +254,7 @@ const Pricing = () => {
             <h4 className="text-white font-semibold mb-2">What happens to my data if I downgrade?</h4>
             <p className="text-slate-400 text-sm">Your existing data remains safe. However, you'll be limited to the free plan restrictions for new uploads.</p>
           </div>
-          <div>
-            <h4 className="text-white font-semibold mb-2">Is there a refund policy?</h4>
-            <p className="text-slate-400 text-sm">Yes, we offer a 30-day money-back guarantee for all paid plans.</p>
-          </div>
+
         </CardContent>
       </Card>
     </div>

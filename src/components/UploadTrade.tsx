@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Image, Loader2, CheckCircle, AlertCircle, X, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, Image, Loader2, CheckCircle, AlertCircle, X, Plus, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUsageLimit } from '@/hooks/useUsageLimit';
 
 interface TradeData {
   symbol: string;
@@ -35,7 +36,6 @@ interface ExtractedTrade {
 }
 
 interface UploadTradeProps {
-  onTradeAdded?: () => void;
 }
 
 interface AccountSummary {
@@ -46,7 +46,7 @@ interface AccountSummary {
   Balance?: number;
 }
 
-const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
+const UploadTrade = ({}: UploadTradeProps = {}) => {
   const [files, setFiles] = useState<File[]>([]);
   const [tradeData, setTradeData] = useState<TradeData>({
     symbol: '',
@@ -68,13 +68,35 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
   const { toast } = useToast();
   const [rawGeminiOutput, setRawGeminiOutput] = useState<string>('');
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const { hasReachedLimit, loading: isUsageLoading } = useUsageLimit();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
+    
+    // Check if user has reached the upload limit
+    if (hasReachedLimit && !isUsageLoading) {
+      toast({
+        title: "Upload Limit Reached",
+        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setFiles(selectedFiles);
-  };
+  }, [hasReachedLimit, isUsageLoading, toast]);
 
-  const processImageWithOCR = async (file: File) => {
+  const processImageWithOCR = useCallback(async (file: File) => {
+    // Check if user has reached the upload limit before processing
+    if (hasReachedLimit && !isUsageLoading) {
+      toast({
+        title: "Upload Limit Reached",
+        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setOcrProcessing(true);
     try {
       // Hide intermediate toasts: toast({ title: "Extracting text with OCR…", description: "Contacting OCR.space API…" });
@@ -187,21 +209,21 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
     } finally {
       setOcrProcessing(false);
     }
-  };
+  }, [hasReachedLimit, isUsageLoading, toast]);
 
-  const updateExtractedTrade = (id: string, field: keyof ExtractedTrade, value: string) => {
+  const updateExtractedTrade = useCallback((id: string, field: keyof ExtractedTrade, value: string) => {
     setExtractedTrades(prev => 
       prev.map(trade => 
         trade.id === id ? { ...trade, [field]: value } : trade
       )
     );
-  };
+  }, []);
 
-  const removeExtractedTrade = (id: string) => {
+  const removeExtractedTrade = useCallback((id: string) => {
     setExtractedTrades(prev => prev.filter(trade => trade.id !== id));
-  };
+  }, []);
 
-  const addNewExtractedTrade = () => {
+  const addNewExtractedTrade = useCallback(() => {
     const newTrade: ExtractedTrade = {
       id: `manual-${Date.now()}`,
       symbol: '',
@@ -215,7 +237,7 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
       notes: ''
     };
     setExtractedTrades(prev => [...prev, newTrade]);
-  };
+  }, []);
 
   const uploadScreenshot = async (file: File) => {
     const user = (await supabase.auth.getUser()).data.user;
@@ -237,8 +259,19 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
     return urlData.publicUrl;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user has reached the upload limit
+    if (hasReachedLimit && !isUsageLoading) {
+      toast({
+        title: "Upload Limit Reached",
+        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -278,11 +311,6 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
         description: "Your trade has been successfully recorded.",
       });
 
-      // Refresh usage count
-      if (onTradeAdded) {
-        onTradeAdded();
-      }
-
       // Reset form
       setTradeData({
         symbol: '',
@@ -310,10 +338,20 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
       setLoading(false);
       setUploading(false);
     }
-  };
+  }, [hasReachedLimit, isUsageLoading, files, tradeData, uploadScreenshot, toast]);
 
   const handleSaveAllTrades = async () => {
     if (extractedTrades.length === 0) return;
+
+    // Check if user has reached the upload limit
+    if (hasReachedLimit && !isUsageLoading) {
+      toast({
+        title: "Upload Limit Reached",
+        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -354,11 +392,6 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
         title: "All Trades Added!",
         description: `Successfully saved ${extractedTrades.length} trades.`,
       });
-
-      // Refresh usage count
-      if (onTradeAdded) {
-        onTradeAdded();
-      }
 
       // Reset extracted trades
       setExtractedTrades([]);
@@ -403,6 +436,19 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Upload Limit Warning */}
+            {hasReachedLimit && !isUsageLoading && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <Lock className="h-5 w-5 text-red-400" />
+                  <div>
+                    <p className="text-red-400 font-semibold">Upload Limit Reached</p>
+                    <p className="text-red-300 text-sm">You've used all 10 free uploads. Upgrade to continue adding trades.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
               <Upload className="h-8 w-8 text-slate-400 mx-auto mb-3" />
               <p className="text-slate-300 mb-2">Drop your screenshot here or click to browse</p>
@@ -416,9 +462,10 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
               />
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={hasReachedLimit || isUsageLoading}
+                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-600 disabled:cursor-not-allowed"
               >
-                Choose File
+                {hasReachedLimit ? 'Limit Reached' : 'Choose File'}
               </Button>
             </div>
             {files.length > 0 && (
@@ -430,11 +477,11 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
                 <Button
                   type="button"
                   onClick={() => processImageWithOCR(files[0])}
-                  disabled={ocrProcessing}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={ocrProcessing || hasReachedLimit}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-600 disabled:cursor-not-allowed"
                 >
                   {ocrProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {ocrProcessing ? 'Processing...' : 'Extract Trade Data'}
+                  {ocrProcessing ? 'Processing...' : hasReachedLimit ? 'Limit Reached' : 'Extract Trade Data'}
                 </Button>
               </div>
             )}
@@ -469,10 +516,11 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
         <div>
           <Button
             variant="outline"
-            className="mb-2 border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="mb-2 bg-blue-600 text-slate-50 hover:bg-blue-700/90 disabled:bg-slate-600 disabled:cursor-not-allowed"
             onClick={() => setShowManualEntry((prev) => !prev)}
+            disabled={hasReachedLimit}
           >
-            {showManualEntry ? 'Hide Manual Trade Entry' : 'Manual Trade Entry'}
+            {showManualEntry ? 'Hide Manual Trade Entry' : hasReachedLimit ? 'Limit Reached' : 'Manual Trade Entry'}
           </Button>
           {showManualEntry && (
             <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-sm mt-2">
@@ -598,11 +646,11 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
                   </div>
                   <Button
                     type="submit"
-                    disabled={loading || uploading || ocrProcessing}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-medium"
+                    disabled={loading || uploading || ocrProcessing || hasReachedLimit}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-medium disabled:bg-slate-600 disabled:cursor-not-allowed"
                   >
                     {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {uploading ? 'Uploading Screenshot...' : loading ? 'Adding Trade...' : 'Add Single Trade'}
+                    {uploading ? 'Uploading Screenshot...' : loading ? 'Adding Trade...' : hasReachedLimit ? 'Limit Reached' : 'Add Single Trade'}
                   </Button>
                 </form>
               </CardContent>
@@ -625,11 +673,11 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button type="button" onClick={addNewExtractedTrade} variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                <Plus className="h-4 w-4 mr-1" /> Add Trade
+              <Button type="button" onClick={addNewExtractedTrade} variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 disabled:bg-slate-600 disabled:cursor-not-allowed" disabled={hasReachedLimit}>
+                <Plus className="h-4 w-4 mr-1" /> {hasReachedLimit ? 'Limit Reached' : 'Add Trade'}
               </Button>
-              <Button onClick={handleSaveAllTrades} disabled={loading || uploading} className="bg-green-600 hover:bg-green-700">
-                {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save All
+              <Button onClick={handleSaveAllTrades} disabled={loading || uploading || hasReachedLimit} className="bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed">
+                {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} {hasReachedLimit ? 'Limit Reached' : 'Save All'}
               </Button>
             </div>
           </CardHeader>
@@ -691,8 +739,8 @@ const UploadTrade = ({ onTradeAdded }: UploadTradeProps = {}) => {
             ))}
             {/* Save All Trades Button at Bottom */}
             <div className="pt-6 border-t border-slate-700/50">
-              <Button onClick={handleSaveAllTrades} disabled={loading || uploading} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-medium">
-                {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save All Trades ({extractedTrades.length})
+              <Button onClick={handleSaveAllTrades} disabled={loading || uploading || hasReachedLimit} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 font-medium disabled:bg-slate-600 disabled:cursor-not-allowed">
+                {(loading || uploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} {hasReachedLimit ? 'Limit Reached' : `Save All Trades (${extractedTrades.length})`}
               </Button>
             </div>
           </CardContent>
