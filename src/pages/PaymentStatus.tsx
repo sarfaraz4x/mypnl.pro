@@ -7,7 +7,8 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const PaymentStatus = () => {
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [planName, setPlanName] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,10 +28,25 @@ const PaymentStatus = () => {
     const verifyPayment = async () => {
         // For this example, we'll just simulate a successful verification.
         // In a real implementation, you would make a call to a backend function.
-        console.log(`Verifying payment for order: ${order_id}`);
-        // const { data, error } = await supabase.functions.invoke('verify-payment-status', { body: { order_id } });
-        // if (error) { setStatus('error'); } else { setStatus('success'); }
-        setStatus('success');
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-payment-status', {
+            body: { order_id },
+          });
+          if (error || !data) {
+            console.error('Payment verification error:', error);
+            setStatus('error');
+            return;
+          }
+          if (data.success) {
+            setPlanName(data.plan_name || null);
+            setStatus('success');
+          } else {
+            setStatus('error');
+          }
+        } catch (err) {
+          console.error('verify-payment-status failed:', err);
+          setStatus('error');
+        }
     };
 
     verifyPayment();
@@ -56,6 +72,9 @@ const PaymentStatus = () => {
               <CheckCircle className="h-16 w-16 text-green-500" />
               <h3 className="text-xl font-semibold">Payment Successful!</h3>
               <p className="text-slate-400">Thank you for upgrading. Your new plan is now active.</p>
+              {planName && (
+                <p className="text-slate-300 text-sm">Plan Chosen: <span className="font-semibold">{planName}</span></p>
+              )}
               <p className="text-xs text-slate-500">Order ID: {orderId}</p>
             </div>
           )}
