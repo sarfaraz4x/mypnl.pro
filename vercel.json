@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/icon-:size.png",
+      "destination": "/icon-:size.png"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
