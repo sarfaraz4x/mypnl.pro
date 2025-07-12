@@ -1,22 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
+
+import { useState, useEffect } from 'react';
 import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Check, Crown, Zap, Star, Loader2 } from 'lucide-react';
+import { Check, Crown, Zap, Infinity, Star, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Pricing = () => {
   const [uploadsCount, setUploadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchUploadsCount = useCallback(async () => {
+  useEffect(() => {
+    fetchUploadsCount();
+    checkLifetimeAccess();
+  }, []);
+
+  const fetchUploadsCount = async () => {
     try {
       const { data, error } = await supabase
         .from('trades')
@@ -27,17 +32,15 @@ const Pricing = () => {
       setUploadsCount(data?.length || 0);
     } catch (error) {
       console.error('Error fetching uploads count:', error);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  const fetchUserSubscription = useCallback(async () => {
-    setLoading(true);
+  const checkLifetimeAccess = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setCurrentPlan('Free');
-        return;
-      }
+      if (!user) return;
 
       const { data, error } = await supabase
         .from('subscriptions')
@@ -46,46 +49,18 @@ const Pricing = () => {
         .eq('status', 'active')
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking subscription:', error);
-        setCurrentPlan('Free');
         return;
       }
 
-      if (data) {
-        setCurrentPlan(data.plan_type);
-        if (data.plan_type === 'Lifetime') {
-          setHasLifetimeAccess(true);
-        }
-      } else {
-        setCurrentPlan('Free');
+      if (data && data.plan_type === 'lifetime') {
+        setHasLifetimeAccess(true);
       }
     } catch (error) {
-      console.error('Error fetching user subscription:', error);
-      setCurrentPlan('Free');
-    } finally {
-      setLoading(false);
+      console.error('Error checking lifetime access:', error);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchUploadsCount();
-    fetchUserSubscription();
-
-    const handleFocus = () => {
-      const subscriptionUpdated = localStorage.getItem('subscription_updated');
-      if (subscriptionUpdated) {
-        fetchUserSubscription();
-        localStorage.removeItem('subscription_updated');
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [fetchUploadsCount, fetchUserSubscription]);
+  };
 
   const plans = [
     {
@@ -98,7 +73,9 @@ const Pricing = () => {
         'CSV export',
         'Trade journal',
       ],
-      buttonText: 'Upgrade Now',
+      current: true,
+      buttonText: 'Current Plan',
+      buttonDisabled: true,
     },
     {
       name: 'Monthly Pro',
@@ -113,6 +90,7 @@ const Pricing = () => {
       ],
       popular: true,
       buttonText: 'Upgrade Now',
+      buttonDisabled: false,
       priceAmount: 99,
     },
     {
@@ -128,6 +106,7 @@ const Pricing = () => {
         'Export history',
       ],
       buttonText: 'Best Value',
+      buttonDisabled: false,
       priceAmount: 999,
     },
     {
@@ -142,6 +121,7 @@ const Pricing = () => {
         'No recurring fees',
       ],
       buttonText: 'One-time Payment',
+      buttonDisabled: false,
       priceAmount: 4999,
     },
   ];
@@ -221,103 +201,89 @@ const Pricing = () => {
       </div>
 
       {/* Current Usage */}
-      {!hasLifetimeAccess && currentPlan === 'Free' && (
-        <Card className="bg-slate-800 border-slate-700 max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center">
-              <Zap className="h-5 w-5 mr-2 text-yellow-400" />
-              Current Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Screenshots uploaded</span>
-                <span className="text-white font-semibold">{uploadsCount}/10</span>
-              </div>
-              <Progress value={usagePercentage} className="h-2" />
-              {uploadsCount >= 10 && (
-                <p className="text-red-400 text-sm mt-2">
-                  Upload limit reached. Upgrade to continue adding trades.
-                </p>
-              )}
+      <Card className="bg-slate-800 border-slate-700 max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            <Zap className="h-5 w-5 mr-2 text-yellow-400" />
+            Current Usage
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Screenshots uploaded</span>
+              <span className="text-white font-semibold">{uploadsCount}/10</span>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Progress value={usagePercentage} className="h-2" />
+            {uploadsCount >= 10 && !hasLifetimeAccess && (
+              <p className="text-red-400 text-sm mt-2">
+                Upload limit reached. Upgrade to continue adding trades.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {plans.map((plan) => {
-          const isCurrent = currentPlan === plan.name;
-          if (hasLifetimeAccess && plan.name !== 'Lifetime') return null;
-
-          return (
-            <Card 
-              key={plan.name}
-              className={`bg-slate-800 border-slate-700 relative flex flex-col ${
-                isCurrent ? 'ring-2 ring-blue-500' : plan.popular ? 'ring-2 ring-green-500' : ''
-              }`}
-            >
-              {isCurrent && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-blue-600 text-white px-3 py-1">
-                  Current Plan
-                </Badge>
-              </div>
-              )}
-              {plan.popular && !isCurrent && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+        {plans.map((plan) => (
+          <Card 
+            key={plan.name}
+            className={`bg-slate-800 border-slate-700 relative ${
+              plan.popular ? 'ring-2 ring-green-500' : ''
+            }`}
+          >
+            {plan.popular && (
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-green-600 text-white px-3 py-1">
                   <Crown className="h-3 w-3 mr-1" />
                   Most Popular
                 </Badge>
               </div>
-              )}
+            )}
 
-              <CardHeader className="text-center">
-                <CardTitle className="text-white">{plan.name}</CardTitle>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-center space-x-2">
-                    <span className="text-3xl font-bold text-white">{plan.price}</span>
-                    <span className="text-slate-400">/{plan.period}</span>
-                  </div>
-                  {plan.originalPrice && (
-                    <div className="text-sm text-slate-400 line-through">
-                      {plan.originalPrice}
-                    </div>
-                  )}
+            <CardHeader className="text-center">
+              <CardTitle className="text-white">{plan.name}</CardTitle>
+              <div className="space-y-1">
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="text-3xl font-bold text-white">{plan.price}</span>
+                  <span className="text-slate-400">/{plan.period}</span>
                 </div>
-              </CardHeader>
+                {plan.originalPrice && (
+                  <div className="text-sm text-slate-400 line-through">
+                    {plan.originalPrice}
+                  </div>
+                )}
+              </div>
+            </CardHeader>
 
-              <CardContent className="space-y-4 flex flex-col flex-grow">
-                <ul className="space-y-2 flex-grow">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-green-400 mr-2 flex-shrink-0" />
-                      <span className="text-slate-300">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-center text-sm">
+                    <Check className="h-4 w-4 text-green-400 mr-2 flex-shrink-0" />
+                    <span className="text-slate-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
 
-                <Button
-                  className={`w-full mt-auto ${
-                    isCurrent 
-                      ? 'bg-slate-600 text-slate-400 cursor-not-allowed' 
-                      : plan.popular 
-                        ? 'bg-green-600 hover:bg-green-700' 
-                        : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
-                  disabled={isCurrent || !!isProcessing || hasLifetimeAccess}
-                  onClick={() => handleUpgrade(plan)}
-                >
-                  {isProcessing === plan.name && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isProcessing === plan.name ? 'Processing...' : isCurrent ? 'Current Plan' : plan.buttonText}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+              <Button
+                className={`w-full ${
+                  plan.current 
+                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed' 
+                    : plan.popular 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                disabled={plan.buttonDisabled || !!isProcessing}
+                onClick={() => handleUpgrade(plan)}
+>
+                {isProcessing === plan.name && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isProcessing === plan.name ? 'Processing...' : plan.buttonText}
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* FAQ */}
