@@ -338,8 +338,9 @@ const Index = () => {
             <span className="font-bold text-lg text-white">My PnL</span>
           </div>
                     <div className="flex gap-6 text-slate-400 text-sm">
-            <button onClick={() => setIsLegalModalOpen(true)} className="hover:text-blue-400 transition">Privacy & Terms</button>
-            <button onClick={() => setIsLegalModalOpen(true)} className="hover:text-blue-400 transition">Contact</button>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">Terms & Conditions</a>
+            <a href="/contact" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">Contact</a>
+            <a href="/refund-cancellation" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">Refund & Cancellation</a>
           </div>
           <div className="flex gap-4">
             <a href="#" aria-label="Twitter" className="hover:text-blue-400 transition"><svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0022.4.36a9.09 9.09 0 01-2.88 1.1A4.52 4.52 0 0016.11 0c-2.5 0-4.52 2.02-4.52 4.52 0 .35.04.7.11 1.03C7.69 5.4 4.07 3.7 1.64 1.15c-.38.65-.6 1.4-.6 2.2 0 1.52.77 2.86 1.94 3.65A4.48 4.48 0 01.96 6v.06c0 2.13 1.52 3.9 3.54 4.3-.37.1-.76.16-1.16.16-.28 0-.55-.03-.81-.08.55 1.7 2.16 2.94 4.07 2.97A9.05 9.05 0 010 19.54a12.8 12.8 0 006.92 2.03c8.3 0 12.85-6.88 12.85-12.85 0-.2 0-.39-.01-.58A9.22 9.22 0 0023 3z" /></svg></a>

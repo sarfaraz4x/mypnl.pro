@@ -25,11 +25,12 @@ const LegalInfo = () => {
 
       <div id="contact">
         <h2 className="text-2xl font-bold text-white">📬 Contact Us</h2>
-        <p>Have a question, feedback, or need support? Reach out anytime—we're here to help.</p>
+        <p>You may contact us using the information below:</p>
         <ul className="space-y-2">
-                    <li>📧 Email: <a href="mailto:quickhelix460@gmail.com" className="text-blue-400 hover:underline">quickhelix460@gmail.com</a></li>
-          <li>🌐 Website: <a href="https://www.mypnl.co" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">www.mypnl.co</a></li>
-          <li>📍 Based in: India</li>
+          <li>🏢 Merchant Legal Entity Name: <span className="text-slate-200">SARFARAZ ALAM</span></li>
+          <li>📍 Registered Address: <span className="text-slate-200">Chhota Mahagama, Sahibganj, Sahibganj, Jharkhand, PIN: 816110</span></li>
+          <li>🏬 Operational Address: <span className="text-slate-200">Chhota Mahagama, Sahibganj, Sahibganj, Jharkhand, PIN: 816110</span></li>
+          <li>📧 Email: <a href="mailto:sarfarazalam.sa460@gmail.com" className="text-blue-400 hover:underline">sarfarazalam.sa460@gmail.com</a></li>
         </ul>
       </div>
     </div>
