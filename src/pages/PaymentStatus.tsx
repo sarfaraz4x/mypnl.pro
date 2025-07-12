@@ -19,18 +19,26 @@ const PaymentStatus = () => {
       return;
     }
 
-    // Here you would typically verify the payment status with your backend.
-    // For now, we'll assume if the user is redirected here, it's a success.
-    // In a real app, you'd call a Supabase function to get the order status from Cashfree
-    // and update the user's subscription in your database.
-    
     const verifyPayment = async () => {
-        // For this example, we'll just simulate a successful verification.
-        // In a real implementation, you would make a call to a backend function.
+      try {
         console.log(`Verifying payment for order: ${order_id}`);
-        // const { data, error } = await supabase.functions.invoke('verify-payment-status', { body: { order_id } });
-        // if (error) { setStatus('error'); } else { setStatus('success'); }
-        setStatus('success');
+        const { data, error } = await supabase.functions.invoke('verify-payment-status', { 
+          body: { order_id }
+        });
+        
+        if (error) throw error;
+
+        if (data.status === 'PAID') {
+          setStatus('success');
+          // Set a flag to indicate subscription has been updated
+          localStorage.setItem('subscription_updated', 'true');
+        } else {
+          setStatus('error');
+        }
+      } catch (err) {
+        console.error('Payment verification failed:', err);
+        setStatus('error');
+      }
     };
 
     verifyPayment();
