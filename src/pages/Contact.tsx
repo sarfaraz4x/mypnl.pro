@@ -10,7 +10,7 @@ const Contact = () => {
           <li>🏢 <span className="font-semibold text-white">Merchant Legal Entity Name:</span> SARFARAZ ALAM</li>
           <li>📍 <span className="font-semibold text-white">Registered Address:</span> Chhota Mahagama, Sahibganj, Sahibganj, Jharkhand, PIN: 816110</li>
           <li>🏬 <span className="font-semibold text-white">Operational Address:</span> Chhota Mahagama, Sahibganj, Sahibganj, Jharkhand, PIN: 816110</li>
-          <li>📧 <span className="font-semibold text-white">E-mail ID:</span> <a href="mailto:sarfarazalam.sa460@gmail.com" className="text-blue-400 hover:underline">sarfarazalam.sa460@gmail.com</a></li>
+          <li>📧 <span className="font-semibold text-white">E-mail ID:</span> <a href="mailto:support@mypnl.pro" className="text-blue-400 hover:underline">support@mypnl.pro</a></li>
         </ul>
       </div>
     </main>

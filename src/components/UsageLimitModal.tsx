@@ -17,7 +17,7 @@ const UsageLimitModal = ({ onUpgrade }: UsageLimitModalProps) => {
           </div>
           <CardTitle className="text-white text-2xl">Upload Limit Reached</CardTitle>
           <CardDescription className="text-slate-400">
-            You've used all 10 free screenshot uploads
+            You've used all 20 free trades. Upgrade to continue adding trades.
           </CardDescription>
         </CardHeader>
 

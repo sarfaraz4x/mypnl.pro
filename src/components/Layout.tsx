@@ -10,11 +10,14 @@ import {
   LogOut,
   Crown,
   Menu,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Shield
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,7 +27,19 @@ interface LayoutProps {
 
 const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email === 'sarfarazalam.sa460@gmail.com') {
+        setIsAdmin(true);
+      }
+    };
+    checkAdminStatus();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -48,14 +63,25 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
     { id: 'journal', label: 'Trade Journal', icon: BookOpen },
     { id: 'pricing', label: 'Pricing', icon: Crown },
     { id: 'settings', label: 'Settings', icon: Settings },
+    // Admin panel link - only show for admin user
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin Panel', icon: Shield }] : []),
   ];
 
-  const NavigationContent = () => (
+  const NavigationContent = ({ isCollapsed }: { isCollapsed: boolean }) => (
     <>
       <div className="p-6">
-        <div className="flex items-center mb-8">
-          <img src="/logo.png" alt="MyPnL Logo" className="h-10 w-auto" />
-          <span className="ml-3 text-2xl font-bold text-white">My PnL</span>
+        <div className={`flex items-center justify-between mb-8 ${isCollapsed ? 'justify-center' : ''}`}>
+          <div className="flex items-center">
+            <img src="/logo.png" alt="MyPnL Logo" className="h-10 w-auto" />
+            <span className={`ml-3 text-2xl font-bold text-white ${isCollapsed ? 'hidden' : 'lg:block'}`}>My <span className="text-[#0181FE]">PnL</span></span>
+          </div>
+          <Button 
+            variant="ghost"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-slate-400 hover:bg-primary/10 hover:text-primary p-2 h-auto hidden lg:flex"
+          >
+            {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </Button>
         </div>
         <nav className="space-y-2">
           {navigationItems.map((item) => {
@@ -63,19 +89,19 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
             return (
               <Button
                 key={item.id}
-                variant={activeTab === item.id ? "secondary" : "ghost"}
-                className={`w-full justify-start text-left ${
+                variant="ghost"
+                className={`w-full text-left p-3 h-auto ${isCollapsed ? 'justify-center' : 'justify-start'} ${
                   activeTab === item.id 
-                    ? "bg-slate-700 text-white" 
-                    : "text-slate-300 hover:text-white hover:bg-slate-800"
+                    ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" 
+                    : "text-slate-300 hover:bg-primary/10 hover:text-primary"
                 }`}
                 onClick={() => {
                   onTabChange(item.id);
                   setSidebarOpen(false);
                 }}
               >
-                <Icon className="h-4 w-4 mr-3" />
-                {item.label}
+                <Icon className={`h-5 w-5 ${!isCollapsed ? 'mr-3' : ''}`} />
+                {!isCollapsed && <span className="text-sm">{item.label}</span>}
               </Button>
             );
           })}
@@ -85,12 +111,13 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
       <div className="p-6 mt-auto">
         <Button
           variant="ghost"
-          className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800"
+          className={`w-full text-slate-300 hover:bg-primary/10 hover:text-primary p-3 h-auto ${isCollapsed ? 'justify-center' : 'justify-start'}`}
           onClick={handleLogout}
         >
-          <LogOut className="h-4 w-4 mr-3" />
-          Sign Out
+          <LogOut className={`h-5 w-5 ${!isCollapsed ? 'mr-3' : ''}`} />
+          {!isCollapsed && <span className="text-sm">Sign Out</span>}
         </Button>
+
       </div>
     </>
   );
@@ -107,9 +134,10 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-slate-800 transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 bg-slate-800 transform transition-all duration-300 ease-in-out
         lg:translate-x-0 lg:static lg:inset-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
+        ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
       `}>
         <div className="flex flex-col h-full">
           {/* Mobile close button */}
@@ -124,7 +152,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
             </Button>
           </div>
           
-          <NavigationContent />
+          <NavigationContent isCollapsed={isCollapsed} />
         </div>
       </div>
 
@@ -140,7 +168,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-bold text-white">MyPnL</h1>
+          <h1 className="text-xl font-bold text-white">My<span className="text-[#0181FE]">PnL</span></h1>
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 

@@ -253,10 +253,10 @@ const TradeJournal = () => {
             </div>
 
             <Select onValueChange={setFilterStrategy} defaultValue="all">
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="bg-primary/10 border-primary/20 text-primary">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectContent className="bg-slate-800 border-slate-700 text-white">
                 <SelectItem value="all">All Strategies</SelectItem>
                 <SelectItem value="scalping">Scalping</SelectItem>
                 <SelectItem value="breakout">Breakout</SelectItem>
@@ -268,10 +268,10 @@ const TradeJournal = () => {
             </Select>
 
             <Select onValueChange={setFilterResult} defaultValue="all">
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="bg-primary/10 border-primary/20 text-primary">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
+              <SelectContent className="bg-slate-800 border-slate-700 text-white">
                 <SelectItem value="all">All Results</SelectItem>
                 <SelectItem value="win">Wins Only</SelectItem>
                 <SelectItem value="loss">Losses Only</SelectItem>

@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,17 +7,34 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Check, Crown, Zap, Infinity, Star, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const Pricing = () => {
   const [uploadsCount, setUploadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const { toast } = useToast();
+  const { subscription, loading: subscriptionLoading } = useSubscription();
+
+  // Check if user has lifetime access
+  const hasLifetimeAccess = subscription?.plan_type === 'lifetime';
+  const hasPaidPlan = subscription?.plan_type === 'monthly' || subscription?.plan_type === 'yearly' || subscription?.plan_type === 'lifetime';
+
+  // Helper function to format expiry date
+  const formatExpiryDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+
 
   useEffect(() => {
     fetchUploadsCount();
-    checkLifetimeAccess();
   }, []);
 
   const fetchUploadsCount = async () => {
@@ -37,92 +53,73 @@ const Pricing = () => {
     }
   };
 
-  const checkLifetimeAccess = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('plan_type, status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking subscription:', error);
-        return;
-      }
-
-      if (data && data.plan_type === 'lifetime') {
-        setHasLifetimeAccess(true);
-      }
-    } catch (error) {
-      console.error('Error checking lifetime access:', error);
-    }
-  };
-
   const plans = [
     {
       name: 'Free',
       price: '₹0',
-      period: 'forever',
+      period: 'One-time',
       features: [
-        '10 screenshot uploads',
+        '20 trade uploads',
         'Basic analytics',
-        'CSV export',
+        'CSV/Excel export',
         'Trade journal',
       ],
-      current: true,
-      buttonText: 'Current Plan',
-      buttonDisabled: true,
+      current: subscription?.plan_type === 'free',
+      buttonText: subscription?.plan_type === 'free' ? 'Current Plan' : 'Current Plan',
+      buttonDisabled: subscription?.plan_type === 'free',
+      planType: 'free',
     },
     {
-      name: 'Monthly Pro',
-      price: '₹99',
-      period: 'month',
+      name: 'Pro',
+      price: '₹149',
+      period: 'Valid for 30 days',
       features: [
         'Unlimited screenshots',
         'Advanced analytics',
         'PDF reports',
         'AI insights',
         'Priority support',
+        'CSV/Excel export',
       ],
       popular: true,
-      buttonText: 'Upgrade Now',
-      buttonDisabled: false,
-      priceAmount: 99,
+      buttonText: subscription?.plan_type === 'monthly' ? 'Current Plan' : 'Upgrade Now',
+      buttonDisabled: subscription?.plan_type === 'monthly',
+      priceAmount: 149,
+      planType: 'monthly',
     },
     {
-      name: 'Yearly Pro',
+      name: 'Pro Annual',
       price: '₹999',
-      period: 'year',
-      originalPrice: '₹1,188',
+      period: 'Valid for 1 year',
       features: [
-        'Everything in Monthly',
-        '2 months free',
+        'Save ₹789 (44%)',
+        'Everything in Pro',
         'Advanced filters',
         'Custom strategies',
         'Export history',
+        'CSV/Excel export',
       ],
-      buttonText: 'Best Value',
-      buttonDisabled: false,
+      buttonText: subscription?.plan_type === 'yearly' ? 'Current Plan' : 'Best Value',
+      buttonDisabled: subscription?.plan_type === 'yearly',
       priceAmount: 999,
+      planType: 'yearly',
     },
     {
       name: 'Lifetime',
-      price: '₹4,999',
-      period: 'once',
+      price: '₹3,999',
+      period: 'One-time',
       features: [
         'Everything included',
         'Lifetime access',
-        'Future updates',
+        'All future updates',
         'Premium support',
+        'CSV/Excel export',
         'No recurring fees',
       ],
-      buttonText: 'One-time Payment',
-      buttonDisabled: false,
-      priceAmount: 4999,
+      buttonText: subscription?.plan_type === 'lifetime' ? 'Current Plan' : 'Top Choice',
+      buttonDisabled: subscription?.plan_type === 'lifetime',
+      priceAmount: 3999,
+      planType: 'lifetime',
     },
   ];
 
@@ -139,27 +136,23 @@ const Pricing = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-payment-order', {
-        body: {
-          plan: {
-            name: plan.name,
-            price: plan.priceAmount,
-          },
-          user: {
-            id: user.id,
-            email: user.email,
-            phone: user.phone || '9999999999',
-          },
-        },
-      });
+      // Direct payment links for each plan
+      const paymentLinks = {
+        'Pro': 'https://payments.cashfree.com/forms/mypnl',
+        'Pro Annual': 'https://payments.cashfree.com/forms/proannual',
+        'Lifetime': 'https://payments.cashfree.com/forms/lifetimeplan1'
+      };
 
-      if (error) throw error;
-
-      if (data.payment_session_id) {
-        const cashfree = await load({ mode: 'sandbox' });
-        cashfree.checkout({ paymentSessionId: data.payment_session_id });
+      const paymentLink = paymentLinks[plan.name];
+      if (paymentLink) {
+        // Open payment link in new tab
+        window.open(paymentLink, '_blank');
+        toast({
+          title: 'Payment Link Opened',
+          description: 'Please complete your payment in the new tab.',
+        });
       } else {
-        throw new Error('Failed to create payment session.');
+        throw new Error('Payment link not found for this plan.');
       }
     } catch (error: any) {
       console.error('Upgrade failed:', error);
@@ -173,9 +166,9 @@ const Pricing = () => {
     }
   };
 
-  const usagePercentage = Math.min((uploadsCount / 10) * 100, 100);
+  const usagePercentage = Math.min((uploadsCount / 20) * 100, 100);
 
-  if (loading) {
+  if (loading || subscriptionLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -192,10 +185,30 @@ const Pricing = () => {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">Pricing Plans</h1>
         <p className="text-slate-400">Choose the perfect plan for your trading needs</p>
+        
+
         {hasLifetimeAccess && (
           <div className="mt-4 inline-flex items-center space-x-2 bg-green-600/20 border border-green-500/30 rounded-lg px-4 py-2">
             <Star className="h-5 w-5 text-green-400" />
             <span className="text-green-400 font-semibold">Lifetime Access Active</span>
+            <span className="text-green-300 text-xs">(Never expires)</span>
+          </div>
+        )}
+        {hasPaidPlan && !hasLifetimeAccess && (
+          <div className="mt-4 inline-flex items-center space-x-2 bg-blue-600/20 border border-blue-500/30 rounded-lg px-4 py-2">
+            <Crown className="h-5 w-5 text-blue-400" />
+            <div className="flex flex-col">
+              <span className="text-blue-400 font-semibold">
+                {subscription?.plan_type === 'monthly' ? 'Monthly Plan Active' : 
+                 subscription?.plan_type === 'yearly' ? 'Yearly Plan Active' : 
+                 'Premium Plan Active'}
+              </span>
+              {subscription?.end_date && (
+                <span className="text-blue-300 text-xs">
+                  Expires: {formatExpiryDate(subscription.end_date)}
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -211,13 +224,20 @@ const Pricing = () => {
         <CardContent>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Screenshots uploaded</span>
-              <span className="text-white font-semibold">{uploadsCount}/10</span>
+              <span className="text-slate-400">Trades uploaded</span>
+              <span className="text-white font-semibold">
+                {hasPaidPlan ? `${uploadsCount}/∞` : `${uploadsCount}/20`}
+              </span>
             </div>
-            <Progress value={usagePercentage} className="h-2" />
-            {uploadsCount >= 10 && !hasLifetimeAccess && (
+            <Progress value={hasPaidPlan ? 0 : usagePercentage} className="h-2" />
+            {uploadsCount >= 20 && !hasPaidPlan && (
               <p className="text-red-400 text-sm mt-2">
                 Upload limit reached. Upgrade to continue adding trades.
+              </p>
+            )}
+            {hasPaidPlan && (
+              <p className="text-green-400 text-sm mt-2">
+                {hasLifetimeAccess ? 'Unlimited uploads with lifetime access' : 'Unlimited uploads with paid plan'}
               </p>
             )}
           </div>
@@ -245,13 +265,15 @@ const Pricing = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-white">{plan.name}</CardTitle>
               <div className="space-y-1">
-                <div className="flex items-center justify-center space-x-2">
-                  <span className="text-3xl font-bold text-white">{plan.price}</span>
-                  <span className="text-slate-400">/{plan.period}</span>
-                </div>
-                {plan.originalPrice && (
-                  <div className="text-sm text-slate-400 line-through">
-                    {plan.originalPrice}
+                <span className="text-3xl font-bold text-white">{plan.price}</span>
+                <p className="text-slate-400 text-sm">{plan.period}</p>
+                {(plan.name === 'Pro' || plan.name === 'Pro Annual') && 
+                  <p className="text-xs text-slate-500">(One-time)</p>
+                }
+                {plan.name === 'Lifetime' && hasLifetimeAccess && (
+                  <div className="mt-2 inline-flex items-center space-x-1 bg-green-600/20 border border-green-500/30 rounded px-2 py-1">
+                    <Star className="h-3 w-3 text-green-400" />
+                    <span className="text-green-400 text-xs font-semibold">Active</span>
                   </div>
                 )}
               </div>

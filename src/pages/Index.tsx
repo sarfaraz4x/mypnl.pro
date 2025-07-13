@@ -80,6 +80,12 @@ const Index = () => {
       return;
     }
     
+    // If admin tab is selected, open admin panel in new tab
+    if (tab === 'admin') {
+      window.open('/admin', '_blank');
+      return;
+    }
+    
     setActiveTab(tab);
   }, [hasReachedLimit]);
 
@@ -257,9 +263,13 @@ const Index = () => {
             ))}
           </div>
         </section>
-        {/* Pricing Section (duplicated for landing) */}
+        {/* Pricing Section */}
         <section id="pricing" className="w-full max-w-6xl mx-auto px-6 py-16">
-          <h2 className="text-2xl font-bold mb-8 text-white text-center">Pricing Plans</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Pricing Plans</h2>
+            <p className="text-slate-400 text-lg">Choose the perfect plan for your trading needs</p>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Free Plan */}
             <div className="bg-slate-800 border-slate-700 relative rounded-2xl shadow-md flex flex-col items-center p-8 gap-4">
@@ -269,64 +279,187 @@ const Index = () => {
                 <span className="text-slate-400">/forever</span>
               </div>
               <ul className="space-y-2 mb-6">
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">10 screenshot uploads</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Basic analytics</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">CSV export</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Trade journal</span></li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">20 trade uploads</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Basic analytics</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">CSV/Excel export</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Trade journal</span>
+                </li>
               </ul>
-              <button className="w-full bg-slate-600 text-slate-400 font-semibold py-2 rounded-lg cursor-not-allowed">Current Plan</button>
+              <button 
+                onClick={() => handleAuthNav('signup')}
+                className="w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg transition"
+              >
+                Get Started Free
+              </button>
             </div>
-            {/* Monthly Pro Plan (Most Popular) */}
+
+            {/* Pro Plan (Most Popular) */}
             <div className="bg-slate-800 border-slate-700 relative rounded-2xl shadow-md flex flex-col items-center p-8 gap-4 ring-2 ring-green-500 scale-105">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-green-600 text-white px-3 py-1 rounded-full flex items-center"><svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z" /></svg>Most Popular</span>
+                <span className="bg-green-600 text-white px-3 py-1 rounded-full flex items-center">
+                  <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z" />
+                  </svg>
+                  Most Popular
+                </span>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Monthly Pro</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
               <div className="flex items-center justify-center space-x-2 mb-1">
-                <span className="text-3xl font-bold text-white">₹99</span>
+                <span className="text-3xl font-bold text-white">₹149</span>
                 <span className="text-slate-400">/month</span>
               </div>
               <ul className="space-y-2 mb-6">
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Unlimited screenshots</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Advanced analytics</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">PDF reports</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">AI insights</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Priority support</span></li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Unlimited screenshots</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Advanced analytics</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">PDF reports</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">AI insights</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Priority support</span>
+                </li>
               </ul>
-              <button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition">Upgrade Now</button>
+              <button 
+                onClick={() => handleAuthNav('signup')}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition"
+              >
+                Start Pro Trial
+              </button>
             </div>
-            {/* Yearly Pro Plan */}
+
+            {/* Pro Annual Plan */}
             <div className="bg-slate-800 border-slate-700 relative rounded-2xl shadow-md flex flex-col items-center p-8 gap-4">
-              <h3 className="text-xl font-semibold text-white mb-2">Yearly Pro</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">Pro Annual</h3>
               <div className="flex items-center justify-center space-x-2 mb-1">
                 <span className="text-3xl font-bold text-white">₹999</span>
                 <span className="text-slate-400">/year</span>
-                <span className="text-sm text-slate-400 line-through ml-2">₹1,188</span>
+                <span className="text-sm text-slate-400 line-through ml-2">₹1,788</span>
               </div>
               <ul className="space-y-2 mb-6">
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Everything in Monthly</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">2 months free</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Advanced filters</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Custom strategies</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Export history</span></li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Save ₹789 (44%)</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Everything in Pro</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Advanced filters</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Custom strategies</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Export history</span>
+                </li>
               </ul>
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">Best Value</button>
+              <button 
+                onClick={() => handleAuthNav('signup')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+              >
+                Best Value
+              </button>
             </div>
+
             {/* Lifetime Plan */}
             <div className="bg-slate-800 border-slate-700 relative rounded-2xl shadow-md flex flex-col items-center p-8 gap-4">
               <h3 className="text-xl font-semibold text-white mb-2">Lifetime</h3>
               <div className="flex items-center justify-center space-x-2 mb-1">
-                <span className="text-3xl font-bold text-white">₹4,999</span>
+                <span className="text-3xl font-bold text-white">₹3,999</span>
                 <span className="text-slate-400">/once</span>
               </div>
               <ul className="space-y-2 mb-6">
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Everything included</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Lifetime access</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Future updates</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">Premium support</span></li>
-                <li className="flex items-center text-sm"><svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span className="text-slate-300">No recurring fees</span></li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Everything included</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Lifetime access</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">All future updates</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">Premium support</span>
+                </li>
+                <li className="flex items-center text-sm">
+                  <svg className="h-4 w-4 text-green-400 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span className="text-slate-300">No recurring fees</span>
+                </li>
               </ul>
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">One-time Payment</button>
+              <button 
+                onClick={() => handleAuthNav('signup')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+              >
+                Top Choice
+              </button>
             </div>
           </div>
         </section>

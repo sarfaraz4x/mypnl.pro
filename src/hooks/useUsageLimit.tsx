@@ -1,14 +1,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 export const useUsageLimit = () => {
   const [uploadsCount, setUploadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasReachedLimit, setHasReachedLimit] = useState(false);
-  const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
+  const { subscription } = useSubscription();
 
-  const FREE_UPLOAD_LIMIT = 10;
+  const FREE_UPLOAD_LIMIT = 20;
 
   const fetchUploadsCount = useCallback(async () => {
     try {
@@ -25,49 +26,28 @@ export const useUsageLimit = () => {
     }
   }, []);
 
-  const checkLifetimeAccess = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setHasLifetimeAccess(false);
-        return;
-      }
+  const hasLifetimeAccess = subscription?.plan_type === 'lifetime';
+  const hasPaidPlan = subscription?.plan_type === 'monthly' || subscription?.plan_type === 'yearly' || subscription?.plan_type === 'lifetime';
 
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('plan_type, status')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking subscription:', error);
-        setHasLifetimeAccess(false);
-        return;
-      }
-
-      const hasLifetime = data && data.plan_type === 'lifetime';
-      setHasLifetimeAccess(hasLifetime);
-    } catch (error) {
-      console.error('Error checking lifetime access:', error);
-      setHasLifetimeAccess(false);
-    }
-  }, []);
-
-  // Update limit status whenever uploads count or lifetime access changes
+  // Update limit status whenever uploads count or subscription changes
   useEffect(() => {
-    if (!hasLifetimeAccess) {
-      setHasReachedLimit(uploadsCount >= FREE_UPLOAD_LIMIT);
-    } else {
+    if (hasLifetimeAccess) {
+      // Lifetime users have unlimited uploads
       setHasReachedLimit(false);
+    } else if (hasPaidPlan) {
+      // Paid users (monthly/yearly) have unlimited uploads
+      setHasReachedLimit(false);
+    } else {
+      // Free users are limited to 10 uploads
+      setHasReachedLimit(uploadsCount >= FREE_UPLOAD_LIMIT);
     }
-  }, [uploadsCount, hasLifetimeAccess]);
+  }, [uploadsCount, hasLifetimeAccess, hasPaidPlan]);
 
   // Initialize data
   useEffect(() => {
     const initializeData = async () => {
       try {
-        await Promise.all([fetchUploadsCount(), checkLifetimeAccess()]);
+        await fetchUploadsCount();
       } catch (error) {
         console.error('Error initializing usage data:', error);
       } finally {
@@ -76,17 +56,17 @@ export const useUsageLimit = () => {
     };
 
     initializeData();
-  }, [fetchUploadsCount, checkLifetimeAccess]);
+  }, [fetchUploadsCount]);
 
   const refreshUsageCount = useCallback(() => {
     fetchUploadsCount();
-    checkLifetimeAccess();
-  }, [fetchUploadsCount, checkLifetimeAccess]);
+  }, [fetchUploadsCount]);
 
   return {
     uploadsCount,
     hasReachedLimit,
     hasLifetimeAccess,
+    hasPaidPlan,
     freeLimit: FREE_UPLOAD_LIMIT,
     loading,
     refreshUsageCount

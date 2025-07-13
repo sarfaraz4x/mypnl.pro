@@ -26,10 +26,10 @@ const RefundCancellation = () => {
         <p className="mt-4">
           If you face any issues canceling your subscription, please reach out to us at{' '}
           <a
-            href="mailto:sarfarazalam.sa460@gmail.com"
+            href="mailto:support@mypnl.pro"
             className="text-blue-400 hover:underline"
           >
-            sarfarazalam.sa460@gmail.com
+            support@mypnl.pro
           </a>
         </p>
       </div>

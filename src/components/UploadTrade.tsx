@@ -77,7 +77,7 @@ const UploadTrade = ({}: UploadTradeProps = {}) => {
     if (hasReachedLimit && !isUsageLoading) {
       toast({
         title: "Upload Limit Reached",
-        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        description: "You've reached the free trial limit of 20 trades. Please upgrade to continue.",
         variant: "destructive"
       });
       return;
@@ -91,7 +91,7 @@ const UploadTrade = ({}: UploadTradeProps = {}) => {
     if (hasReachedLimit && !isUsageLoading) {
       toast({
         title: "Upload Limit Reached",
-        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        description: "You've reached the free trial limit of 20 trades. Please upgrade to continue.",
         variant: "destructive"
       });
       return;
@@ -266,7 +266,7 @@ const UploadTrade = ({}: UploadTradeProps = {}) => {
     if (hasReachedLimit && !isUsageLoading) {
       toast({
         title: "Upload Limit Reached",
-        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        description: "You've reached the free trial limit of 20 trades. Please upgrade to continue.",
         variant: "destructive"
       });
       return;
@@ -347,7 +347,7 @@ const UploadTrade = ({}: UploadTradeProps = {}) => {
     if (hasReachedLimit && !isUsageLoading) {
       toast({
         title: "Upload Limit Reached",
-        description: "You've reached the free trial limit of 10 uploads. Please upgrade to continue.",
+        description: "You've reached the free trial limit of 20 trades. Please upgrade to continue.",
         variant: "destructive"
       });
       return;
@@ -443,7 +443,7 @@ const UploadTrade = ({}: UploadTradeProps = {}) => {
                   <Lock className="h-5 w-5 text-red-400" />
                   <div>
                     <p className="text-red-400 font-semibold">Upload Limit Reached</p>
-                    <p className="text-red-300 text-sm">You've used all 10 free uploads. Upgrade to continue adding trades.</p>
+                    <p className="text-red-300 text-sm">You've used all 20 free trades. Upgrade to continue adding trades.</p>
                   </div>
                 </div>
               </div>

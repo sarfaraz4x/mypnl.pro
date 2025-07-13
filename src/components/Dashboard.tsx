@@ -129,6 +129,48 @@ const Dashboard = () => {
   }, [] as Array<{ date: string; pnl: number; fill: string }>)
   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  const weeklyPnLData = trades.reduce((acc, trade) => {
+    const tradeDate = new Date(trade.trade_date);
+    const day = tradeDate.getDay();
+    const diff = tradeDate.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const weekStart = new Date(tradeDate.setDate(diff));
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const formatDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const weekLabel = `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
+
+    const existing = acc.find(item => item.date === weekLabel);
+    if (existing) {
+      existing.pnl += trade.pnl;
+    } else {
+      acc.push({ 
+        date: weekLabel, 
+        pnl: trade.pnl,
+        startDate: weekStart
+      });
+    }
+    return acc;
+  }, [] as Array<{ date: string; pnl: number; startDate: Date }>)
+  .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+  const monthlyPnLData = trades.reduce((acc, trade) => {
+    const date = new Date(trade.trade_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+    const existing = acc.find(item => item.date === date);
+    if (existing) {
+      existing.pnl += trade.pnl;
+    } else {
+      acc.push({ 
+        date, 
+        pnl: trade.pnl,
+      });
+    }
+    return acc;
+  }, [] as Array<{ date: string; pnl: number }>)
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
   const cumulativePnLData = trades
     .sort((a, b) => new Date(a.trade_date).getTime() - new Date(b.trade_date).getTime())
     .reduce((acc, trade, index) => {
@@ -176,6 +218,21 @@ const Dashboard = () => {
   .slice(0, 5);
 
   const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444'];
+
+  // Custom Tooltip for Charts
+  const CustomTooltip = ({ active, payload, label, profitColor, lossColor }: any) => {
+    if (active && payload && payload.length) {
+      const pnl = payload[0].value;
+      const color = pnl >= 0 ? profitColor : lossColor;
+      return (
+        <div className="p-2 bg-slate-800 border border-slate-700 rounded-md shadow-lg">
+          <p className="label text-slate-400">{`${label}`}</p>
+          <p className="intro font-bold" style={{ color }}>{`P&L: $${pnl.toFixed(2)}`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Calculate total lots
   const totalLots = trades.reduce((sum, trade) => sum + (Number(trade.lot_size) || 0), 0);
@@ -291,7 +348,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Daily P&L Chart */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-white">Daily P&L</CardTitle>
             <CardDescription className="text-slate-400">
@@ -300,7 +357,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dailyPnLData.slice(-30)}>
+              <BarChart data={dailyPnLData.slice(-30)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                 <XAxis 
                   dataKey="date" 
@@ -313,15 +370,81 @@ const Dashboard = () => {
                   fontSize={12}
                   tickLine={false}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1e293b', 
-                    border: '1px solid #475569',
-                    borderRadius: '8px',
-                    color: '#ffffff'
-                  }}
+                <Tooltip cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }} content={<CustomTooltip profitColor="#10B981" lossColor="#EF4444" />} />
+                <Bar dataKey="pnl">
+                  {dailyPnLData.slice(-30).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#10B981' : '#EF4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Weekly P&L Chart */}
+        <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-white">Weekly P&L</CardTitle>
+            <CardDescription className="text-slate-400">
+              Your weekly profit and loss
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={weeklyPnLData.slice(-12)} margin={{ top: 5, right: 20, left: -10, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#94a3b8"
+                  fontSize={10}
+                  tickLine={false}
+                  interval={0} angle={-45} textAnchor="end"
                 />
-                <Bar dataKey="pnl" fill="#10B981" />
+                <YAxis 
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                />
+                <Tooltip cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }} content={<CustomTooltip profitColor="#3B82F6" lossColor="#F97316" />} />
+                <Bar dataKey="pnl">
+                  {weeklyPnLData.slice(-12).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#3B82F6' : '#F97316'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Monthly P&L Chart */}
+        <Card className="bg-slate-800 border-slate-700 lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-white">Monthly P&L</CardTitle>
+            <CardDescription className="text-slate-400">
+              Your monthly profit and loss
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={monthlyPnLData.slice(-12)} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                />
+                <YAxis 
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                />
+                <Tooltip cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }} content={<CustomTooltip profitColor="#A855F7" lossColor="#EAB308" />} />
+                <Bar dataKey="pnl">
+                  {monthlyPnLData.slice(-12).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.pnl >= 0 ? '#A855F7' : '#EAB308'} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
